@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Goobrow Search</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+body{
+  font-family:Arial,sans-serif;
+  color:#202124;
+  background:#fff;
+}
+
+.top{
+  padding:18px 20px;
+  border-bottom:1px solid #eee;
+}
+
+.logo{
+  font-size:30px;
+  font-weight:700;
+  letter-spacing:-2px;
+  text-decoration:none;
+}
+
+.logo span:nth-child(1){color:#4285f4}
+.logo span:nth-child(2){color:#ea4335}
+.logo span:nth-child(3){color:#fbbc05}
+.logo span:nth-child(4){color:#4285f4}
+.logo span:nth-child(5){color:#34a853}
+.logo span:nth-child(6){color:#ea4335}
+.logo span:nth-child(7){color:#4285f4}
+
+.search{
+  margin-top:18px;
+  width:min(700px,100%);
+  height:48px;
+  border:1px solid #dfe1e5;
+  border-radius:25px;
+  display:flex;
+  align-items:center;
+  padding:0 16px;
+}
+
+.search input{
+  flex:1;
+  border:0;
+  outline:0;
+  font-size:16px;
+}
+
+.search button{
+  border:0;
+  background:none;
+  font-size:20px;
+  cursor:pointer;
+}
+
+.results{
+  width:min(700px,92%);
+  margin:30px 0 80px 6%;
+}
+
+.result{
+  margin-bottom:30px;
+}
+
+.result h2{
+  font-size:20px;
+  font-weight:500;
+  margin-bottom:5px;
+}
+
+.result h2 a{
+  color:#1a0dab;
+  text-decoration:none;
+}
+
+.result h2 a:hover{
+  text-decoration:underline;
+}
+
+.url{
+  color:#188038;
+  font-size:14px;
+  margin-bottom:6px;
+  word-break:break-all;
+}
+
+.description{
+  color:#4d5156;
+  line-height:1.5;
+}
+
+.loading{
+  color:#70757a;
+}
+
+@media(max-width:600px){
+  .results{
+    margin-left:5%;
+    width:90%;
+  }
+
+  .result h2{
+    font-size:18px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="top">
+
+<a href="index.html" class="logo">
+<span>G</span><span>o</span><span>o</span><span>b</span><span>r</span><span>o</span><span>w</span>
+</a>
+
+<div class="search">
+<input id="searchInput" placeholder="Search with Goobrow">
+<button onclick="search()">🔎</button>
+</div>
+
+</div>
+
+<div class="results" id="results">
+<p class="loading">Searching Goobrow...</p>
+</div>
+
+<script>
+
+const input=document.getElementById("searchInput");
+const results=document.getElementById("results");
+
+const params=new URLSearchParams(location.search);
+const query=params.get("q") || "";
+
+input.value=query;
+
+input.addEventListener("keydown",function(event){
+  if(event.key==="Enter"){
+    search();
+  }
+});
+
+function search(){
+
+  const q=input.value.trim();
+
+  if(!q)return;
+
+  location.href=
+    "results.html?q="+encodeURIComponent(q);
+}
+
+async function loadResults(){
+
+  if(!query){
+    results.innerHTML="<p>Please enter a search query.</p>";
+    return;
+  }
+
+  try{
+
+    const response=
+      await fetch(
+        "http://localhost:3000/api/search?q="+
+        encodeURIComponent(query)
+      );
+
+    if(!response.ok){
+      throw new Error("Search request failed");
+    }
+
+    const data=await response.json();
+
+    results.innerHTML="";
+
+    data.results.forEach(result=>{
+
+      const item=document.createElement("div");
+
+      item.className="result";
+
+      item.innerHTML=`
+        <h2>
+          <a href="${result.url}">
+            ${escapeHtml(result.title)}
+          </a>
+        </h2>
+
+        <div class="url">
+          ${escapeHtml(result.url)}
+        </div>
+
+        <div class="description">
+          ${escapeHtml(result.description)}
+        </div>
+      `;
+
+      results.appendChild(item);
+
+    });
+
+  }catch(error){
+
+    results.innerHTML=
+      "<p>Goobrow could not connect to the search server.</p>";
+
+  }
+}
+
+function escapeHtml(text){
+
+  const div=document.createElement("div");
+
+  div.textContent=text;
+
+  return div.innerHTML;
+}
+
+loadResults();
+
+</script>
+
+</body>
+</html>
