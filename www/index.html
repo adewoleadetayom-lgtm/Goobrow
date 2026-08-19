@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Goobrow</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f5f7fb;color:#172033}
+header{padding:18px;text-align:center}
+.logo{font-size:34px;font-weight:bold}
+.logo span{color:#1769aa}
+.search{display:flex;gap:8px;padding:15px}
+input{flex:1;padding:15px;border:1px solid #ccd3df;border-radius:25px;font-size:16px;outline:none}
+button{border:0;border-radius:20px;padding:0 20px;background:#1769aa;color:white;font-size:16px}
+main{text-align:center;padding:45px 20px}
+h1{font-size:42px;margin:10px}
+p{color:#667085}
+</style>
+</head>
+<body>
+
+<header>
+<div class="logo">Goo<span>brow</span></div>
+</header>
+
+<div class="search">
+<input id="searchBox" placeholder="Search the web or enter a website">
+<button onclick="search()">Search</button>
+</div>
+
+<main>
+<h1>Welcome to Goobrow</h1>
+<p>A simple browser made from your phone.</p>
+</main>
+
+<script>
+function search(){
+const q=document.getElementById("searchBox").value.trim();
+if(!q)return;
+
+let url;
+
+if(/^https?:\/\//i.test(q)){
+url=q;
+}else if(q.includes(".") && !q.includes(" ")){
+url="https://"+q;
+}else{
+url="https://www.google.com/search?q="+encodeURIComponent(q);
+}
+
+window.location.href=url;
+}
+
+document.getElementById("searchBox").addEventListener("keydown",e=>{
+if(e.key==="Enter")search();
+});
+</script>
+
+</body>
+</html>
