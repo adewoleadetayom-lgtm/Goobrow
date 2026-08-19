@@ -31,10 +31,7 @@ app.get("/api/search", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.json({
-    name: "Goobrow Search Engine",
-    status: "online"
-  });
+  res.sendFile("index.html", { root: "www" });
 });
 
 app.listen(PORT, () => {
