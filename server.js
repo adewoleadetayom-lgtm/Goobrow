@@ -6,6 +6,7 @@ const PORT = 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static("www"));
 
 app.get("/api/search", (req, res) => {
   const query = String(req.query.q || "").trim();
