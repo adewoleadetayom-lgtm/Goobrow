@@ -81,61 +81,26 @@ app.get("/api/search", (req, res) => {
     });
   }
 
-  const indexFile = path.join(
-    __dirname,
-    "data",
-    "index.json"
-  );
-
+  const indexFile = path.join(__dirname, "data", "index.json");
   let index = [];
 
   try {
     if (fs.existsSync(indexFile)) {
-      index = JSON.parse(
-        fs.readFileSync(indexFile, "utf8")
-      );
+      index = JSON.parse(fs.readFileSync(indexFile, "utf8"));
     }
   } catch (error) {
-    console.error(
-      "Could not read Goobrow index:",
-      error.message
-    );
+    console.error("Could not read Goobrow index:", error.message);
   }
 
-  const words = query
+  const normalizedQuery = query
     .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean);
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
-  function makeSnippet(text) {
-    const clean = String(text || "")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    const lower = clean.toLowerCase();
-
-    let position = -1;
-
-    for (const word of words) {
-      const found = lower.indexOf(word);
-
-      if (found !== -1) {
-        position = found;
-        break;
-      }
-    }
-
-    if (position === -1) {
-      return clean.slice(0, 250);
-    }
-
-    const start = Math.max(0, position - 80);
-
-    return clean.slice(
-      start,
-      start + 300
-    );
-  }
+  const words = normalizedQuery
+    .split(" ")
+    .filter(word => word.length > 1);
 
   const results = index
     .map((page) => {
@@ -143,71 +108,67 @@ app.get("/api/search", (req, res) => {
       const text = String(page.text || "");
       const url = String(page.url || "");
 
-      const lowerTitle =
-        title.toLowerCase();
-
-      const lowerText =
-        text.toLowerCase();
-
-      const lowerUrl =
-        url.toLowerCase();
+      const titleLower = title.toLowerCase();
+      const textLower = text.toLowerCase();
+      const urlLower = url.toLowerCase();
 
       let score = 0;
-      let matchedWords = 0;
 
+      // Strong match for the complete search phrase.
+      if (titleLower.includes(normalizedQuery)) {
+        score += 40;
+      }
+
+      if (textLower.includes(normalizedQuery)) {
+        score += 20;
+      }
+
+      if (urlLower.includes(normalizedQuery)) {
+        score += 15;
+      }
+
+      // Score individual search words.
       for (const word of words) {
-        let matched = false;
-
-        if (lowerTitle.includes(word)) {
-          score += 30;
-          matched = true;
+        if (titleLower.includes(word)) {
+          score += 12;
         }
 
-        if (lowerText.includes(word)) {
-          score += 5;
-          matched = true;
+        if (textLower.includes(word)) {
+          score += 4;
         }
 
-        if (lowerUrl.includes(word)) {
-          score += 10;
-          matched = true;
-        }
-
-        if (matched) {
-          matchedWords++;
+        if (urlLower.includes(word)) {
+          score += 3;
         }
       }
 
-      if (matchedWords === words.length) {
-        score += 20;
+      // Small bonus for pages matching every word.
+      const matchesEveryWord = words.length > 0 &&
+        words.every(word =>
+          titleLower.includes(word) ||
+          textLower.includes(word) ||
+          urlLower.includes(word)
+        );
+
+      if (matchesEveryWord) {
+        score += 25;
       }
 
       return {
         page,
-        score,
-        matchedWords
+        score
       };
     })
-    .filter(
-      (item) => item.score > 0
-    )
-    .sort((a, b) => {
-      if (b.score !== a.score) {
-        return b.score - a.score;
-      }
-
-      return (
-        b.matchedWords -
-        a.matchedWords
-      );
-    })
+    .filter(item => item.score > 0)
+    .sort((a, b) => b.score - a.score)
     .slice(0, 20)
-    .map((item) => ({
+    .map(item => ({
       title: item.page.title,
       url: item.page.url,
-      description: makeSnippet(
-        item.page.text
-      )
+      description: String(item.page.text || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 300)
     }));
 
   res.json({
@@ -216,7 +177,7 @@ app.get("/api/search", (req, res) => {
     totalResults: results.length,
     results
   });
-});;;
+});;;;
 
 
 app.listen(PORT, () => {
