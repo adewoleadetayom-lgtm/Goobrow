@@ -19,18 +19,61 @@ app.get("/api/search", (req, res) => {
     });
   }
 
-  const indexFile = path.join(__dirname, "data", "index.json");
+  const indexFile = path.join(
+    __dirname,
+    "data",
+    "index.json"
+  );
+
   let index = [];
 
   try {
     if (fs.existsSync(indexFile)) {
-      index = JSON.parse(fs.readFileSync(indexFile, "utf8"));
+      index = JSON.parse(
+        fs.readFileSync(indexFile, "utf8")
+      );
     }
   } catch (error) {
-    console.error("Could not read Goobrow index:", error.message);
+    console.error(
+      "Could not read Goobrow index:",
+      error.message
+    );
   }
 
-  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const words = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  function makeSnippet(text) {
+    const clean = String(text || "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const lower = clean.toLowerCase();
+
+    let position = -1;
+
+    for (const word of words) {
+      const found = lower.indexOf(word);
+
+      if (found !== -1) {
+        position = found;
+        break;
+      }
+    }
+
+    if (position === -1) {
+      return clean.slice(0, 250);
+    }
+
+    const start = Math.max(0, position - 80);
+
+    return clean.slice(
+      start,
+      start + 300
+    );
+  }
 
   const results = index
     .map((page) => {
@@ -38,31 +81,80 @@ app.get("/api/search", (req, res) => {
       const text = String(page.text || "");
       const url = String(page.url || "");
 
+      const lowerTitle =
+        title.toLowerCase();
+
+      const lowerText =
+        text.toLowerCase();
+
+      const lowerUrl =
+        url.toLowerCase();
+
       let score = 0;
+      let matchedWords = 0;
 
       for (const word of words) {
-        if (title.toLowerCase().includes(word)) score += 10;
-        if (text.toLowerCase().includes(word)) score += 3;
-        if (url.toLowerCase().includes(word)) score += 2;
+        let matched = false;
+
+        if (lowerTitle.includes(word)) {
+          score += 30;
+          matched = true;
+        }
+
+        if (lowerText.includes(word)) {
+          score += 5;
+          matched = true;
+        }
+
+        if (lowerUrl.includes(word)) {
+          score += 10;
+          matched = true;
+        }
+
+        if (matched) {
+          matchedWords++;
+        }
       }
 
-      return { page, score };
+      if (matchedWords === words.length) {
+        score += 20;
+      }
+
+      return {
+        page,
+        score,
+        matchedWords
+      };
     })
-    .filter((item) => item.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .filter(
+      (item) => item.score > 0
+    )
+    .sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+
+      return (
+        b.matchedWords -
+        a.matchedWords
+      );
+    })
     .slice(0, 20)
     .map((item) => ({
       title: item.page.title,
       url: item.page.url,
-      description: String(item.page.text || "").slice(0, 250)
+      description: makeSnippet(
+        item.page.text
+      )
     }));
 
   res.json({
     engine: "Goobrow",
     query,
+    totalResults: results.length,
     results
   });
-});;
+});;;
 
 
 app.listen(PORT, () => {
