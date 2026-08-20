@@ -1,4 +1,6 @@
 const express = require("express");
+const fs = require("fs");
+const path = require("path");
 const cors = require("cors");
 
 const app = express();
@@ -17,18 +19,50 @@ app.get("/api/search", (req, res) => {
     });
   }
 
+  const indexFile = path.join(__dirname, "data", "index.json");
+  let index = [];
+
+  try {
+    if (fs.existsSync(indexFile)) {
+      index = JSON.parse(fs.readFileSync(indexFile, "utf8"));
+    }
+  } catch (error) {
+    console.error("Could not read Goobrow index:", error.message);
+  }
+
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+
+  const results = index
+    .map((page) => {
+      const title = String(page.title || "");
+      const text = String(page.text || "");
+      const url = String(page.url || "");
+
+      let score = 0;
+
+      for (const word of words) {
+        if (title.toLowerCase().includes(word)) score += 10;
+        if (text.toLowerCase().includes(word)) score += 3;
+        if (url.toLowerCase().includes(word)) score += 2;
+      }
+
+      return { page, score };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 20)
+    .map((item) => ({
+      title: item.page.title,
+      url: item.page.url,
+      description: String(item.page.text || "").slice(0, 250)
+    }));
+
   res.json({
     engine: "Goobrow",
     query,
-    results: [
-      {
-        title: `Search results for ${query}`,
-        url: "#",
-        description: "Goobrow search results will appear here."
-      }
-    ]
+    results
   });
-});
+});;
 
 
 app.listen(PORT, () => {
