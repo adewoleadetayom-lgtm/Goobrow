@@ -70,7 +70,7 @@ async function indexPage(url) {
   const title = $("title").first().text().trim();
 
   const text = $("body")
-    .text(" ")
+    .text()
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 10000);
