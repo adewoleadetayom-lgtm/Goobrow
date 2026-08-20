@@ -1,145 +1,114 @@
-const http = require("http");
-const https = require("https");
-const cheerio = require("cheerio");
+
 const fs = require("fs");
 const path = require("path");
+const cheerio = require("cheerio");
 
-const INDEX_FILE = path.join(__dirname, "data", "index.json");
-const MAX_PAGES = 20;
-const MAX_PAGE_SIZE = 2_000_000;
-const REQUEST_TIMEOUT = 15000;
+const MAX_PAGES = Number(process.env.MAX_PAGES || 100);
+const MAX_DEPTH = Number(process.env.MAX_DEPTH || 2);
+const REQUEST_TIMEOUT = 10000;
+const DELAY_MS = 500;
 
-function fetchPage(url) {
-  return new Promise((resolve, reject) => {
-    const client = url.startsWith("https://") ? https : http;
+const seeds = [
+  "https://www.iana.org/",
+  "https://www.wikipedia.org/",
+  "https://developer.mozilla.org/",
+  "https://www.w3.org/",
+  "https://www.python.org/"
+];
 
-    const request = client.get(
-      url,
-      {
-        headers: {
-          "User-Agent": "GoobrowBot/1.0"
-        }
-      },
-      (response) => {
-        if (
-          response.statusCode >= 300 &&
-          response.statusCode < 400 &&
-          response.headers.location
-        ) {
-          response.resume();
+const indexFile = path.join(__dirname, "data", "index.json");
 
-          const nextUrl = new URL(response.headers.location, url).href;
-
-          return fetchPage(nextUrl)
-            .then(resolve)
-            .catch(reject);
-        }
-
-        if (response.statusCode !== 200) {
-          response.resume();
-          return reject(
-            new Error(`HTTP ${response.statusCode}`)
-          );
-        }
-
-        let body = "";
-
-        response.setEncoding("utf8");
-
-        response.on("data", (chunk) => {
-          body += chunk;
-
-          if (body.length > MAX_PAGE_SIZE) {
-            response.destroy(
-              new Error("Page is too large.")
-            );
-          }
-        });
-
-        response.on("end", () => {
-          resolve(body);
-        });
-      }
-    );
-
-    request.setTimeout(REQUEST_TIMEOUT, () => {
-      request.destroy(
-        new Error("Request timed out.")
-      );
-    });
-
-    request.on("error", reject);
-  });
-}
-
-async function canCrawl(url) {
+function normalizeUrl(raw, base) {
   try {
-    const parsed = new URL(url);
-    const robotsUrl =
-      `${parsed.protocol}//${parsed.host}/robots.txt`;
+    const url = new URL(raw, base);
 
-    const robots = await fetchPage(robotsUrl);
+    if (!["http:", "https:"].includes(url.protocol)) return null;
 
-    const lines = robots
-      .split(/\r?\n/)
-      .map((line) => line.trim());
+    url.hash = "";
 
-    let appliesToGoobrow = false;
-    let disallowed = [];
-
-    for (const line of lines) {
-      if (!line || line.startsWith("#")) continue;
-
-      const separator = line.indexOf(":");
-      if (separator === -1) continue;
-
-      const key = line
-        .slice(0, separator)
-        .trim()
-        .toLowerCase();
-
-      const value = line
-        .slice(separator + 1)
-        .trim();
-
-      if (key === "user-agent") {
-        appliesToGoobrow =
-          value === "*" ||
-          value.toLowerCase() === "goobrowbot";
-        continue;
-      }
-
-      if (appliesToGoobrow && key === "disallow") {
-        disallowed.push(value);
-      }
+    if (url.pathname.length > 1 && url.pathname.endsWith("/")) {
+      url.pathname = url.pathname.slice(0, -1);
     }
 
-    const pathname = parsed.pathname || "/";
-
-    return !disallowed.some((rule) => {
-      if (!rule) return false;
-      return pathname.startsWith(rule);
-    });
-  } catch (_) {
-    return true;
+    return url.toString();
+  } catch {
+    return null;
   }
 }
 
-async function indexPage(url) {
-  const html = await fetchPage(url);
+function isAllowed(url) {
+  try {
+    const u = new URL(url);
+
+    if (!["http:", "https:"].includes(u.protocol)) return false;
+
+    if (
+      u.pathname.match(
+        /\.(jpg|jpeg|png|gif|webp|svg|ico|mp3|mp4|avi|mov|zip|rar|7z|pdf|doc|docx|xls|xlsx|ppt|pptx)$/i
+      )
+    ) {
+      return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchPage(url) {
+  const controller = new AbortController();
+
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, REQUEST_TIMEOUT);
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      redirect: "follow",
+      headers: {
+        "User-Agent": "GoobrowBot/1.0 (+local search crawler)"
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const type = response.headers.get("content-type") || "";
+
+    if (!type.includes("text/html")) {
+      return null;
+    }
+
+    const html = await response.text();
+
+    return {
+      finalUrl: response.url || url,
+      html
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function extractPage(url, html) {
   const $ = cheerio.load(html);
 
-  $("script, style, noscript").remove();
+  $("script,style,noscript,svg,iframe").remove();
 
-  const title =
-    $("title").first().text().trim();
+  const title = $("title").first().text().replace(/\s+/g, " ").trim();
 
-  const text =
-    $("body")
-      .text()
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 10000);
+  const text = $("body")
+    .text()
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 20000);
 
   const links = [];
 
@@ -148,155 +117,140 @@ async function indexPage(url) {
 
     if (!href) return;
 
-    try {
-      const absolute =
-        new URL(href, url);
+    const normalized = normalizeUrl(href, url);
 
-      if (
-        absolute.protocol === "http:" ||
-        absolute.protocol === "https:"
-      ) {
-        absolute.hash = "";
-
-        links.push(absolute.href);
-      }
-    } catch (_) {}
+    if (normalized && isAllowed(normalized)) {
+      links.push(normalized);
+    }
   });
 
   return {
     url,
     title: title || url,
     text,
-    links: [...new Set(links)].slice(0, 100),
-    indexedAt: new Date().toISOString()
+    links: [...new Set(links)]
   };
 }
 
-function loadIndex() {
-  if (!fs.existsSync(INDEX_FILE)) {
-    return [];
-  }
+async function main() {
+  fs.mkdirSync(path.dirname(indexFile), { recursive: true });
+
+  let oldIndex = [];
 
   try {
-    return JSON.parse(
-      fs.readFileSync(INDEX_FILE, "utf8")
-    );
-  } catch (_) {
-    return [];
+    if (fs.existsSync(indexFile)) {
+      oldIndex = JSON.parse(fs.readFileSync(indexFile, "utf8"));
+    }
+  } catch {
+    oldIndex = [];
   }
-}
 
-function saveIndex(index) {
-  fs.mkdirSync(
-    path.dirname(INDEX_FILE),
-    { recursive: true }
-  );
+  const indexMap = new Map();
 
-  fs.writeFileSync(
-    INDEX_FILE,
-    JSON.stringify(index, null, 2)
-  );
-}
+  for (const page of oldIndex) {
+    if (page && page.url) {
+      indexMap.set(page.url, page);
+    }
+  }
 
-async function crawl(seed) {
-  const start = new URL(seed);
+  const queue = [];
 
-  const queue = [start.href];
+  for (const seed of seeds) {
+    const url = normalizeUrl(seed);
+
+    if (url) {
+      queue.push({
+        url,
+        depth: 0
+      });
+    }
+  }
+
   const visited = new Set();
-  let index = loadIndex();
 
-  while (
-    queue.length > 0 &&
-    visited.size < MAX_PAGES
-  ) {
-    const url = queue.shift();
+  let pagesVisited = 0;
+
+  console.log("======================================");
+  console.log("        GOOBROW WEB CRAWLER");
+  console.log("======================================");
+  console.log(`Maximum pages: ${MAX_PAGES}`);
+  console.log(`Maximum depth: ${MAX_DEPTH}`);
+  console.log(`Existing index: ${indexMap.size}`);
+  console.log("");
+
+  while (queue.length && pagesVisited < MAX_PAGES) {
+    const current = queue.shift();
+
+    if (!current) continue;
+
+    const { url, depth } = current;
 
     if (visited.has(url)) continue;
 
     visited.add(url);
 
-    let parsed;
-
-    try {
-      parsed = new URL(url);
-    } catch (_) {
-      continue;
-    }
-
-    if (
-      parsed.protocol !== "http:" &&
-      parsed.protocol !== "https:"
-    ) {
-      continue;
-    }
-
     console.log(
-      `[${visited.size}/${MAX_PAGES}] Crawling ${url}`
+      `[${pagesVisited + 1}/${MAX_PAGES}] Crawling ${url}`
     );
 
     try {
-      const allowed = await canCrawl(url);
+      const pageResponse = await fetchPage(url);
 
-      if (!allowed) {
-        console.log("Skipped by robots.txt");
+      if (!pageResponse) {
+        console.log("Skipped: non-HTML page");
         continue;
       }
 
-      const page = await indexPage(url);
+      const page = extractPage(pageResponse.finalUrl, pageResponse.html);
 
-      index = index.filter(
-        (item) => item.url !== page.url
-      );
+      indexMap.set(page.url, {
+        url: page.url,
+        title: page.title,
+        text: page.text,
+        indexedAt: new Date().toISOString()
+      });
 
-      index.push(page);
+      pagesVisited++;
 
-      for (const link of page.links) {
-        const linkUrl = new URL(link);
+      console.log(`Indexed: ${page.title}`);
 
-        if (
-          linkUrl.protocol === start.protocol &&
-          linkUrl.host === start.host &&
-          !visited.has(linkUrl.href) &&
-          !queue.includes(linkUrl.href)
-        ) {
-          queue.push(linkUrl.href);
+      if (depth < MAX_DEPTH) {
+        for (const link of page.links) {
+          if (!visited.has(link) && !queue.some(item => item.url === link)) {
+            queue.push({
+              url: link,
+              depth: depth + 1
+            });
+          }
         }
       }
-
-      saveIndex(index);
-
-      console.log(
-        `Indexed: ${page.title || page.url}`
-      );
     } catch (error) {
-      console.log(
-        `Skipped: ${error.message}`
-      );
+      console.log(`Skipped: ${error.message}`);
+    }
+
+    if (queue.length) {
+      await sleep(DELAY_MS);
     }
   }
 
-  saveIndex(index);
+  const finalIndex = [...indexMap.values()];
+
+  fs.writeFileSync(
+    indexFile,
+    JSON.stringify(finalIndex, null, 2)
+  );
 
   console.log("");
-  console.log("=== GOOBROW CRAWL COMPLETE ===");
-  console.log(`Pages visited: ${visited.size}`);
-  console.log(`Pages in index: ${index.length}`);
-  console.log(`Index: ${INDEX_FILE}`);
+  console.log("======================================");
+  console.log("       GOOBROW CRAWL COMPLETE");
+  console.log("======================================");
+  console.log(`Pages visited: ${pagesVisited}`);
+  console.log(`Pages in index: ${finalIndex.length}`);
+  console.log(`Remaining queue: ${queue.length}`);
+  console.log(`Index: ${indexFile}`);
 }
 
-const seed = process.argv[2];
-
-if (!seed) {
-  console.error(
-    "Usage: node crawler.js https://example.com"
-  );
-  process.exit(1);
-}
-
-crawl(seed).catch((error) => {
-  console.error(
-    "Crawler error:",
-    error.message
-  );
+main().catch(error => {
+  console.error("Crawler error:", error);
   process.exit(1);
 });
