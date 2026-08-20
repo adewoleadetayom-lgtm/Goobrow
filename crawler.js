@@ -1,17 +1,23 @@
+const http = require("http");
 const https = require("https");
 const cheerio = require("cheerio");
 const fs = require("fs");
 const path = require("path");
 
 const INDEX_FILE = path.join(__dirname, "data", "index.json");
+const MAX_PAGES = 20;
+const MAX_PAGE_SIZE = 2_000_000;
+const REQUEST_TIMEOUT = 15000;
 
 function fetchPage(url) {
   return new Promise((resolve, reject) => {
-    const request = https.get(
+    const client = url.startsWith("https://") ? https : http;
+
+    const request = client.get(
       url,
       {
         headers: {
-          "User-Agent": "GoobrowBot/1.0 (+https://goobrow.example)"
+          "User-Agent": "GoobrowBot/1.0"
         }
       },
       (response) => {
@@ -21,7 +27,10 @@ function fetchPage(url) {
           response.headers.location
         ) {
           response.resume();
-          return fetchPage(new URL(response.headers.location, url).href)
+
+          const nextUrl = new URL(response.headers.location, url).href;
+
+          return fetchPage(nextUrl)
             .then(resolve)
             .catch(reject);
         }
@@ -29,7 +38,7 @@ function fetchPage(url) {
         if (response.statusCode !== 200) {
           response.resume();
           return reject(
-            new Error(`HTTP ${response.statusCode} while fetching ${url}`)
+            new Error(`HTTP ${response.statusCode}`)
           );
         }
 
@@ -40,9 +49,9 @@ function fetchPage(url) {
         response.on("data", (chunk) => {
           body += chunk;
 
-          if (body.length > 2_000_000) {
+          if (body.length > MAX_PAGE_SIZE) {
             response.destroy(
-              new Error("Page is too large for the local crawler.")
+              new Error("Page is too large.")
             );
           }
         });
@@ -53,12 +62,67 @@ function fetchPage(url) {
       }
     );
 
-    request.setTimeout(15000, () => {
-      request.destroy(new Error("Request timed out."));
+    request.setTimeout(REQUEST_TIMEOUT, () => {
+      request.destroy(
+        new Error("Request timed out.")
+      );
     });
 
     request.on("error", reject);
   });
+}
+
+async function canCrawl(url) {
+  try {
+    const parsed = new URL(url);
+    const robotsUrl =
+      `${parsed.protocol}//${parsed.host}/robots.txt`;
+
+    const robots = await fetchPage(robotsUrl);
+
+    const lines = robots
+      .split(/\r?\n/)
+      .map((line) => line.trim());
+
+    let appliesToGoobrow = false;
+    let disallowed = [];
+
+    for (const line of lines) {
+      if (!line || line.startsWith("#")) continue;
+
+      const separator = line.indexOf(":");
+      if (separator === -1) continue;
+
+      const key = line
+        .slice(0, separator)
+        .trim()
+        .toLowerCase();
+
+      const value = line
+        .slice(separator + 1)
+        .trim();
+
+      if (key === "user-agent") {
+        appliesToGoobrow =
+          value === "*" ||
+          value.toLowerCase() === "goobrowbot";
+        continue;
+      }
+
+      if (appliesToGoobrow && key === "disallow") {
+        disallowed.push(value);
+      }
+    }
+
+    const pathname = parsed.pathname || "/";
+
+    return !disallowed.some((rule) => {
+      if (!rule) return false;
+      return pathname.startsWith(rule);
+    });
+  } catch (_) {
+    return true;
+  }
 }
 
 async function indexPage(url) {
@@ -67,13 +131,15 @@ async function indexPage(url) {
 
   $("script, style, noscript").remove();
 
-  const title = $("title").first().text().trim();
+  const title =
+    $("title").first().text().trim();
 
-  const text = $("body")
-    .text()
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 10000);
+  const text =
+    $("body")
+      .text()
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 10000);
 
   const links = [];
 
@@ -83,17 +149,18 @@ async function indexPage(url) {
     if (!href) return;
 
     try {
-      const absolute = new URL(href, url);
+      const absolute =
+        new URL(href, url);
 
       if (
         absolute.protocol === "http:" ||
         absolute.protocol === "https:"
       ) {
+        absolute.hash = "";
+
         links.push(absolute.href);
       }
-    } catch (_) {
-      // Ignore invalid links.
-    }
+    } catch (_) {}
   });
 
   return {
@@ -105,51 +172,131 @@ async function indexPage(url) {
   };
 }
 
-async function main() {
-  const target = process.argv[2];
-
-  if (!target) {
-    console.error("Usage: node crawler.js https://example.com");
-    process.exit(1);
+function loadIndex() {
+  if (!fs.existsSync(INDEX_FILE)) {
+    return [];
   }
 
-  const parsed = new URL(target);
-
-  if (!["http:", "https:"].includes(parsed.protocol)) {
-    throw new Error("Only HTTP and HTTPS URLs are allowed.");
+  try {
+    return JSON.parse(
+      fs.readFileSync(INDEX_FILE, "utf8")
+    );
+  } catch (_) {
+    return [];
   }
+}
 
-  const page = await indexPage(parsed.href);
-
-  fs.mkdirSync(path.dirname(INDEX_FILE), { recursive: true });
-
-  let index = [];
-
-  if (fs.existsSync(INDEX_FILE)) {
-    try {
-      index = JSON.parse(fs.readFileSync(INDEX_FILE, "utf8"));
-    } catch (_) {
-      index = [];
-    }
-  }
-
-  index = index.filter((item) => item.url !== page.url);
-  index.push(page);
+function saveIndex(index) {
+  fs.mkdirSync(
+    path.dirname(INDEX_FILE),
+    { recursive: true }
+  );
 
   fs.writeFileSync(
     INDEX_FILE,
     JSON.stringify(index, null, 2)
   );
-
-  console.log("Goobrow indexed:");
-  console.log(`Title: ${page.title}`);
-  console.log(`URL: ${page.url}`);
-  console.log(`Characters: ${page.text.length}`);
-  console.log(`Links found: ${page.links.length}`);
-  console.log(`Saved to: ${INDEX_FILE}`);
 }
 
-main().catch((error) => {
-  console.error("Crawler error:", error.message);
+async function crawl(seed) {
+  const start = new URL(seed);
+
+  const queue = [start.href];
+  const visited = new Set();
+  let index = loadIndex();
+
+  while (
+    queue.length > 0 &&
+    visited.size < MAX_PAGES
+  ) {
+    const url = queue.shift();
+
+    if (visited.has(url)) continue;
+
+    visited.add(url);
+
+    let parsed;
+
+    try {
+      parsed = new URL(url);
+    } catch (_) {
+      continue;
+    }
+
+    if (
+      parsed.protocol !== "http:" &&
+      parsed.protocol !== "https:"
+    ) {
+      continue;
+    }
+
+    console.log(
+      `[${visited.size}/${MAX_PAGES}] Crawling ${url}`
+    );
+
+    try {
+      const allowed = await canCrawl(url);
+
+      if (!allowed) {
+        console.log("Skipped by robots.txt");
+        continue;
+      }
+
+      const page = await indexPage(url);
+
+      index = index.filter(
+        (item) => item.url !== page.url
+      );
+
+      index.push(page);
+
+      for (const link of page.links) {
+        const linkUrl = new URL(link);
+
+        if (
+          linkUrl.protocol === start.protocol &&
+          linkUrl.host === start.host &&
+          !visited.has(linkUrl.href) &&
+          !queue.includes(linkUrl.href)
+        ) {
+          queue.push(linkUrl.href);
+        }
+      }
+
+      saveIndex(index);
+
+      console.log(
+        `Indexed: ${page.title || page.url}`
+      );
+    } catch (error) {
+      console.log(
+        `Skipped: ${error.message}`
+      );
+    }
+  }
+
+  saveIndex(index);
+
+  console.log("");
+  console.log("=== GOOBROW CRAWL COMPLETE ===");
+  console.log(`Pages visited: ${visited.size}`);
+  console.log(`Pages in index: ${index.length}`);
+  console.log(`Index: ${INDEX_FILE}`);
+}
+
+const seed = process.argv[2];
+
+if (!seed) {
+  console.error(
+    "Usage: node crawler.js https://example.com"
+  );
+  process.exit(1);
+}
+
+crawl(seed).catch((error) => {
+  console.error(
+    "Crawler error:",
+    error.message
+  );
   process.exit(1);
 });
