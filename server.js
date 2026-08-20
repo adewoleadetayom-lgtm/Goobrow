@@ -30,9 +30,6 @@ app.get("/api/search", (req, res) => {
   });
 });
 
-app.get("/", (req, res) => {
-  res.sendFile("index.html", { root: "www" });
-});
 
 app.listen(PORT, () => {
   console.log(`Goobrow search server running at http://localhost:${PORT}`);
