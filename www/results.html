@@ -135,6 +135,12 @@ body{
 <p class="loading">Searching Goobrow...</p>
 </div>
 
+<div class="pagination" id="pagination" style="margin-left:6%;width:min(700px,92%);display:none;">
+  <button id="previousButton" onclick="changePage(-1)">Previous</button>
+  <span class="page-info" id="pageInfo"></span>
+  <button id="nextButton" onclick="changePage(1)">Next</button>
+</div>
+
 <script>
 
 const input=document.getElementById("searchInput");
@@ -161,20 +167,21 @@ function search(){
     "results.html?q="+encodeURIComponent(q);
 }
 
-async function loadResults(){
+let currentPage=Number(params.get("page") || 1);
 
+async function loadResults(){
   if(!query){
     results.innerHTML="<p>Please enter a search query.</p>";
     return;
   }
 
   try{
-
-    const response=
-      await fetch(
-        "http://localhost:3001/api/search?q="+
-        encodeURIComponent(query)
-      );
+    const response=await fetch(
+      "http://localhost:3001/api/search?q="+
+      encodeURIComponent(query)+
+      "&page="+currentPage+
+      "&pageSize=10"
+    );
 
     if(!response.ok){
       throw new Error("Search request failed");
@@ -184,38 +191,66 @@ async function loadResults(){
 
     results.innerHTML="";
 
-    data.results.forEach(result=>{
+    if(!data.results || data.results.length===0){
+      results.innerHTML="<p>No results found for <b>"+
+        escapeHtml(query)+"</b>.</p>";
+    }else{
+      data.results.forEach(result=>{
+        const item=document.createElement("div");
+        item.className="result";
 
-      const item=document.createElement("div");
+        item.innerHTML=`
+          <h2>
+            <a href="${result.url}" target="_blank" rel="noopener">
+              ${escapeHtml(result.title)}
+            </a>
+          </h2>
+          <div class="url">
+            ${escapeHtml(result.url)}
+          </div>
+          <div class="description">
+            ${escapeHtml(result.description)}
+          </div>
+        `;
 
-      item.className="result";
+        results.appendChild(item);
+      });
+    }
 
-      item.innerHTML=`
-        <h2>
-          <a href="${result.url}">
-            ${escapeHtml(result.title)}
-          </a>
-        </h2>
+    const pagination=document.getElementById("pagination");
+    const previousButton=document.getElementById("previousButton");
+    const nextButton=document.getElementById("nextButton");
+    const pageInfo=document.getElementById("pageInfo");
 
-        <div class="url">
-          ${escapeHtml(result.url)}
-        </div>
+    if(data.totalPages > 1){
+      pagination.style.display="flex";
+      pageInfo.textContent=
+        "Page "+data.page+" of "+data.totalPages;
 
-        <div class="description">
-          ${escapeHtml(result.description)}
-        </div>
-      `;
-
-      results.appendChild(item);
-
-    });
+      previousButton.disabled=data.page<=1;
+      nextButton.disabled=data.page>=data.totalPages;
+    }else{
+      pagination.style.display="none";
+    }
 
   }catch(error){
-
+    console.error(error);
     results.innerHTML=
       "<p>Goobrow could not connect to the search server.</p>";
-
   }
+}
+
+function changePage(direction){
+  const nextPage=currentPage+direction;
+
+  if(nextPage<1){
+    return;
+  }
+
+  location.href=
+    "results.html?q="+
+    encodeURIComponent(query)+
+    "&page="+nextPage;
 }
 
 function escapeHtml(text){
