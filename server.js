@@ -10,6 +10,68 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("www"));
 
+app.get("/api/suggestions", (req, res) => {
+  const query = String(req.query.q || "")
+    .trim()
+    .toLowerCase();
+
+  if (!query) {
+    return res.json({
+      suggestions: []
+    });
+  }
+
+  const indexFile = path.join(
+    __dirname,
+    "data",
+    "index.json"
+  );
+
+  let index = [];
+
+  try {
+    if (fs.existsSync(indexFile)) {
+      index = JSON.parse(
+        fs.readFileSync(indexFile, "utf8")
+      );
+    }
+  } catch (error) {
+    console.error(
+      "Could not read Goobrow index:",
+      error.message
+    );
+  }
+
+  const suggestions = [];
+
+  for (const page of index) {
+    const title = String(page.title || "").trim();
+    const url = String(page.url || "").trim();
+
+    if (
+      title.toLowerCase().includes(query) &&
+      title
+    ) {
+      suggestions.push(title);
+    }
+
+    if (
+      url.toLowerCase().includes(query) &&
+      url
+    ) {
+      suggestions.push(url);
+    }
+  }
+
+  const unique = [
+    ...new Set(suggestions)
+  ].slice(0, 8);
+
+  res.json({
+    suggestions: unique
+  });
+});
+
 app.get("/api/search", (req, res) => {
   const query = String(req.query.q || "").trim();
 
