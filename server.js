@@ -102,7 +102,14 @@ app.get("/api/search", (req, res) => {
     .split(" ")
     .filter(word => word.length > 1);
 
-  const results = index
+  const pageNumber = Math.max(
+    1,
+    parseInt(req.query.page || "1", 10) || 1
+  );
+
+  const pageSize = 10;
+
+  const rankedResults = index
     .map((page) => {
       const title = String(page.title || "");
       const text = String(page.text || "");
@@ -160,8 +167,22 @@ app.get("/api/search", (req, res) => {
       };
     })
     .filter(item => item.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 20)
+    .sort((a, b) => b.score - a.score);
+
+  const totalResults = rankedResults.length;
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(totalResults / pageSize)
+  );
+
+  const safePage = Math.min(pageNumber, totalPages);
+
+  const results = rankedResults
+    .slice(
+      (safePage - 1) * pageSize,
+      safePage * pageSize
+    )
     .map(item => ({
       title: item.page.title,
       url: item.page.url,
@@ -174,7 +195,10 @@ app.get("/api/search", (req, res) => {
   res.json({
     engine: "Goobrow",
     query,
-    totalResults: results.length,
+    totalResults,
+    page: safePage,
+    pageSize,
+    totalPages,
     results
   });
 });;;;
