@@ -2,318 +2,133 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Goobrow Search</title>
-
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Goobrow Search Results</title>
 <style>
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-}
-
-body{
-  font-family:Arial,sans-serif;
-  color:#202124;
-  background:#fff;
-}
-
-.top{
-  padding:18px 20px;
-  border-bottom:1px solid #eee;
-}
-
-.logo{
-  font-size:30px;
-  font-weight:700;
-  letter-spacing:-2px;
-  text-decoration:none;
-}
-
-.logo span:nth-child(1){color:#4285f4}
-.logo span:nth-child(2){color:#ea4335}
-.logo span:nth-child(3){color:#fbbc05}
-.logo span:nth-child(4){color:#4285f4}
-.logo span:nth-child(5){color:#34a853}
-.logo span:nth-child(6){color:#ea4335}
-.logo span:nth-child(7){color:#4285f4}
-
-.search{
-  margin-top:18px;
-  width:min(700px,100%);
-  height:48px;
-  border:1px solid #dfe1e5;
-  border-radius:25px;
-  display:flex;
-  align-items:center;
-  padding:0 16px;
-}
-
-.search input{
-  flex:1;
-  border:0;
-  outline:0;
-  font-size:16px;
-}
-
-.search button{
-  border:0;
-  background:none;
-  font-size:20px;
-  cursor:pointer;
-}
-
-.results{
-  width:min(700px,92%);
-  margin:30px 0 80px 6%;
-}
-
-.result{
-  margin-bottom:30px;
-}
-
-.result h2{
-  font-size:20px;
-  font-weight:500;
-  margin-bottom:5px;
-}
-
-.result h2 a{
-  color:#1a0dab;
-  text-decoration:none;
-}
-
-.result h2 a:hover{
-  text-decoration:underline;
-}
-
-.url{
-  color:#188038;
-  font-size:14px;
-  margin-bottom:6px;
-  word-break:break-all;
-}
-
-.description{
-  color:#4d5156;
-  line-height:1.5;
-}
-
-.loading{
-  color:#70757a;
-}
-
-@media(max-width:600px){
-  .results{
-    margin-left:5%;
-    width:90%;
-  }
-
-  .result h2{
-    font-size:18px;
-  }
-}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;color:#202124;background:#fff}
+.top{padding:16px 22px;border-bottom:1px solid #eee;position:sticky;top:0;background:#fff;z-index:5}
+.row{display:flex;align-items:center;gap:18px}.menu{font-size:27px;border:0;background:none;cursor:pointer}
+.logo{font-size:31px;font-weight:700;letter-spacing:-2px;text-decoration:none}
+.logo span:nth-child(1){color:#4285f4}.logo span:nth-child(2){color:#ea4335}.logo span:nth-child(3){color:#fbbc05}.logo span:nth-child(4){color:#4285f4}.logo span:nth-child(5){color:#34a853}.logo span:nth-child(6){color:#ea4335}.logo span:nth-child(7){color:#4285f4}
+.search{width:min(700px,100%);height:46px;border:1px solid #dfe1e5;border-radius:24px;display:flex;align-items:center;padding:0 15px}.search input{flex:1;border:0;outline:0;font-size:16px}.search button{border:0;background:none;font-size:19px;cursor:pointer}
+.side{position:fixed;top:0;left:-290px;width:280px;height:100%;background:#fff;box-shadow:4px 0 20px #0002;z-index:20;padding:20px;transition:.25s}.side.open{left:0}.side a{display:block;padding:14px;border-radius:10px;text-decoration:none;color:#333}.side a:hover{background:#f1f3f4}.close{float:right;border:0;background:none;font-size:24px}
+.overlay{display:none;position:fixed;inset:0;background:#0005;z-index:10}.overlay.show{display:block}
+.results{width:min(720px,92%);margin:28px 0 70px 7%}.result{margin-bottom:27px}.result h2{font-size:20px;font-weight:500;margin:0 0 5px}.result h2 a{color:#1a0dab;text-decoration:none}.result h2 a:hover{text-decoration:underline}.url{font-size:14px;color:#188038;margin-bottom:5px;word-break:break-all}.description{color:#4d5156;line-height:1.5}
+.info{color:#70757a;font-size:14px;margin-bottom:20px}.pagination{display:flex;align-items:center;gap:14px;margin-top:35px}.pagination button{padding:10px 17px;border:1px solid #dadce0;border-radius:7px;background:#fff;cursor:pointer}.pagination button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:600px){.results{margin-left:5%;width:90%}.result h2{font-size:18px}}
 </style>
 </head>
-
 <body>
 
-<div class="top">
+<div id="overlay" class="overlay" onclick="closeMenu()"></div>
+<aside id="side" class="side">
+<button class="close" onclick="closeMenu()">×</button>
+<h2>Goobrow Menu</h2>
+<a href="index.html">🏠 Home</a>
+<a href="index.html#news">📰 News</a>
+<a href="results.html">🔎 Search</a>
+<a href="extensions.html">🧩 Extensions</a>
+<a href="https://images.google.com" target="_blank">🖼️ Images</a>
+</aside>
 
-<a href="index.html" class="logo">
-<span>G</span><span>o</span><span>o</span><span>b</span><span>r</span><span>o</span><span>w</span>
-</a>
-
-<div class="search">
+<header class="top">
+<div class="row">
+<button class="menu" onclick="openMenu()">☰</button>
+<a href="index.html" class="logo"><span>G</span><span>o</span><span>o</span><span>b</span><span>r</span><span>o</span><span>w</span></a>
+<form class="search" onsubmit="search(event)">
 <input id="searchInput" placeholder="Search with Goobrow">
-<button onclick="search()">🔎</button>
+<button>🔎</button>
+</form>
 </div>
+</header>
 
-</div>
-
-<div id="history" style="width:min(700px,92%);margin:15px 0 0 6%;"></div>
-<div class="results" id="results">
-<p class="loading">Searching Goobrow...</p>
-</div>
-
-<div class="pagination" id="pagination" style="margin-left:6%;width:min(700px,92%);display:none;">
-  <button id="previousButton" onclick="changePage(-1)">Previous</button>
-  <span class="page-info" id="pageInfo"></span>
-  <button id="nextButton" onclick="changePage(1)">Next</button>
-</div>
+<main class="results">
+<div id="info" class="info">Searching Goobrow...</div>
+<div id="results"></div>
+<div id="pagination" class="pagination"></div>
+</main>
 
 <script>
-
 const input=document.getElementById("searchInput");
-const results=document.getElementById("results");
-
+const box=document.getElementById("results");
+const info=document.getElementById("info");
+const pagination=document.getElementById("pagination");
 const params=new URLSearchParams(location.search);
-const query=params.get("q") || "";
+const query=params.get("q")||"";
+let page=Math.max(1,parseInt(params.get("page")||"1",10)||1);
 
 input.value=query;
 
-input.addEventListener("keydown",function(event){
-  if(event.key==="Enter"){
-    search();
-  }
-});
-
-function search(){
-
-  const q=input.value.trim();
-
-  if(!q)return;
-
-  location.href=
-    "results.html?q="+encodeURIComponent(q);
+function esc(t){
+const d=document.createElement("div");
+d.textContent=t||"";
+return d.innerHTML;
 }
 
-let currentPage=Number(params.get("page") || 1);
+function openMenu(){document.getElementById("side").classList.add("open");document.getElementById("overlay").classList.add("show")}
+function closeMenu(){document.getElementById("side").classList.remove("open");document.getElementById("overlay").classList.remove("show")}
+
+function search(e){
+if(e)e.preventDefault();
+const q=input.value.trim();
+if(q)location.href="results.html?q="+encodeURIComponent(q);
+}
 
 async function loadResults(){
-  if(!query){
-    results.innerHTML="<p>Please enter a search query.</p>";
-    return;
-  }
+if(!query){
+info.textContent="Please enter a search query.";
+return;
+}
+try{
+const r=await fetch("/api/search?q="+encodeURIComponent(query)+"&page="+page);
+if(!r.ok)throw new Error();
+const data=await r.json();
+info.textContent=data.totalResults+" results found for \""+query+"\"";
+box.innerHTML="";
 
-  try{
-    const response=await fetch(
-      "http://localhost:3001/api/search?q="+
-      encodeURIComponent(query)+
-      "&page="+currentPage+
-      "&pageSize=10"
-    );
-
-    if(!response.ok){
-      throw new Error("Search request failed");
-    }
-
-    const data=await response.json();
-
-    results.innerHTML="";
-
-    if(!data.results || data.results.length===0){
-      results.innerHTML="<p>No results found for <b>"+
-        escapeHtml(query)+"</b>.</p>";
-    }else{
-      data.results.forEach(result=>{
-        const item=document.createElement("div");
-        item.className="result";
-
-        item.innerHTML=`
-          <h2>
-            <a href="${result.url}" target="_blank" rel="noopener">
-              ${escapeHtml(result.title)}
-            </a>
-          </h2>
-          <div class="url">
-            ${escapeHtml(result.url)}
-          </div>
-          <div class="description">
-            ${escapeHtml(result.description)}
-          </div>
-        `;
-
-        results.appendChild(item);
-      });
-    }
-
-    const pagination=document.getElementById("pagination");
-    const previousButton=document.getElementById("previousButton");
-    const nextButton=document.getElementById("nextButton");
-    const pageInfo=document.getElementById("pageInfo");
-
-    if(data.totalPages > 1){
-      pagination.style.display="flex";
-      pageInfo.textContent=
-        "Page "+data.page+" of "+data.totalPages;
-
-      previousButton.disabled=data.page<=1;
-      nextButton.disabled=data.page>=data.totalPages;
-    }else{
-      pagination.style.display="none";
-    }
-
-  }catch(error){
-    console.error(error);
-    results.innerHTML=
-      "<p>Goobrow could not connect to the search server.</p>";
-  }
+if(!data.results||!data.results.length){
+box.innerHTML="<p>No results found for <b>"+esc(query)+"</b>.</p>";
+return;
 }
 
-function changePage(direction){
-  const nextPage=currentPage+direction;
+data.results.forEach(result=>{
+const item=document.createElement("div");
+item.className="result";
+item.innerHTML=
+`<h2><a href="${esc(result.url)}" target="_blank" rel="noopener">${esc(result.title)}</a></h2>
+<div class="url">${esc(result.url)}</div>
+<div class="description">${esc(result.description)}</div>`;
+box.appendChild(item);
+});
 
-  if(nextPage<1){
-    return;
-  }
+pagination.innerHTML="";
+const prev=document.createElement("button");
+prev.textContent="Previous";
+prev.disabled=page<=1;
+prev.onclick=()=>goPage(page-1);
 
-  location.href=
-    "results.html?q="+
-    encodeURIComponent(query)+
-    "&page="+nextPage;
+const pageInfo=document.createElement("span");
+pageInfo.textContent="Page "+data.page+" of "+data.totalPages;
+
+const next=document.createElement("button");
+next.textContent="Next";
+next.disabled=page>=data.totalPages;
+next.onclick=()=>goPage(page+1);
+
+pagination.append(prev,pageInfo,next);
+
+}catch(e){
+info.textContent="";
+box.innerHTML="<p>Goobrow could not connect to the search server.</p>";
+}
 }
 
-function escapeHtml(text){
-
-  const div=document.createElement("div");
-
-  div.textContent=text;
-
-  return div.innerHTML;
+function goPage(p){
+location.href="results.html?q="+encodeURIComponent(query)+"&page="+p;
 }
 
-
-function saveSearchHistory(){
-  const q=query.trim();
-  if(!q)return;
-
-  let history=[];
-  try{
-    history=JSON.parse(localStorage.getItem("goobrow_history")||"[]");
-  }catch(_){
-    history=[];
-  }
-
-  history=history.filter(item=>item.toLowerCase()!==q.toLowerCase());
-  history.unshift(q);
-  history=history.slice(0,10);
-
-  localStorage.setItem("goobrow_history",JSON.stringify(history));
-}
-
-function showSearchHistory(){
-  const box=document.getElementById("history");
-  if(!box)return;
-
-  let history=[];
-  try{
-    history=JSON.parse(localStorage.getItem("goobrow_history")||"[]");
-  }catch(_){
-    history=[];
-  }
-
-  if(!history.length){
-    box.innerHTML="";
-    return;
-  }
-
-  box.innerHTML=
-    '<div style="font-size:13px;color:#70757a;margin-bottom:8px;">Recent searches</div>'+
-    history.map(item=>
-      '<button onclick="location.href=\'results.html?q='+encodeURIComponent(item)+'\'" '+
-      'style="margin:0 7px 7px 0;padding:7px 12px;border:1px solid #dadce0;border-radius:18px;background:#fff;cursor:pointer;">'+
-      escapeHtml(item)+
-      '</button>'
-    ).join("");
-}
-
-saveSearchHistory();
-showSearchHistory();
-
+input.addEventListener("keydown",e=>{if(e.key==="Enter")search(e)});
 loadResults();
-
 </script>
-
 </body>
 </html>
