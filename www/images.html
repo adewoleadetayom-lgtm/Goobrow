@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Goobrow Images</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;color:#202124;background:#fff}
+.top{padding:15px 20px;border-bottom:1px solid #eee;position:sticky;top:0;background:#fff;z-index:5}
+.row{display:flex;align-items:center;gap:15px}
+.menu{font-size:27px;border:0;background:none;cursor:pointer}
+.logo{font-size:30px;font-weight:700;letter-spacing:-2px;text-decoration:none}
+.logo span:nth-child(1){color:#4285f4}
+.logo span:nth-child(2){color:#ea4335}
+.logo span:nth-child(3){color:#fbbc05}
+.logo span:nth-child(4){color:#4285f4}
+.logo span:nth-child(5){color:#34a853}
+.logo span:nth-child(6){color:#ea4335}
+.logo span:nth-child(7){color:#4285f4}
+.search{width:min(650px,100%);height:46px;border:1px solid #dfe1e5;border-radius:24px;display:flex;align-items:center;padding:0 15px}
+.search input{flex:1;border:0;outline:0;font-size:16px}
+.search button{border:0;background:none;font-size:19px;cursor:pointer}
+.side{position:fixed;top:0;left:-290px;width:280px;height:100%;background:#fff;box-shadow:4px 0 20px #0003;z-index:20;padding:20px;transition:.25s}
+.side.open{left:0}
+.side a{display:block;padding:14px;border-radius:10px;text-decoration:none;color:#333}
+.side a:hover{background:#f1f3f4}
+.close{float:right;border:0;background:none;font-size:25px}
+.overlay{display:none;position:fixed;inset:0;background:#0005;z-index:10}
+.overlay.show{display:block}
+.wrap{width:min(1100px,94%);margin:30px auto}
+.info{color:#70757a;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.card{border:1px solid #e1e1e1;border-radius:12px;overflow:hidden;background:#fff;transition:.15s}
+.card:hover{box-shadow:0 2px 10px #0002}
+.card img{width:100%;height:180px;object-fit:cover;background:#f1f3f4;display:block}
+.cardbody{padding:12px}
+.card h3{font-size:16px;margin:0 0 7px}
+.card p{font-size:13px;color:#5f6368;line-height:1.4;margin:0}
+.card a{text-decoration:none;color:#202124}
+.pagination{display:flex;justify-content:center;align-items:center;gap:15px;margin:35px 0}
+.pagination button{padding:10px 18px;border:1px solid #dadce0;background:#fff;border-radius:7px;cursor:pointer}
+.pagination button:disabled{opacity:.4}
+@media(max-width:850px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.grid{grid-template-columns:repeat(2,1fr)}.card img{height:140px}}
+</style>
+</head>
+<body>
+
+<div id="overlay" class="overlay" onclick="closeMenu()"></div>
+
+<aside id="side" class="side">
+<button class="close" onclick="closeMenu()">×</button>
+<h2>Goobrow Menu</h2>
+<a href="index.html">🏠 Home</a>
+<a href="results.html">🔎 Search</a>
+<a href="images.html">🖼️ Images</a>
+<a href="index.html#news">📰 News</a>
+<a href="extensions.html">🧩 Extensions</a>
+</aside>
+
+<header class="top">
+<div class="row">
+<button class="menu" onclick="openMenu()">☰</button>
+<a href="index.html" class="logo">
+<span>G</span><span>o</span><span>o</span><span>b</span><span>r</span><span>o</span><span>w</span>
+</a>
+<form class="search" onsubmit="search(event)">
+<input id="input" placeholder="Search images with Goobrow">
+<button>🔎</button>
+</form>
+</div>
+</header>
+
+<main class="wrap">
+<div id="info" class="info">Search for images...</div>
+<div id="grid" class="grid"></div>
+<div id="pagination" class="pagination"></div>
+</main>
+
+<script>
+const input=document.getElementById("input");
+const grid=document.getElementById("grid");
+const info=document.getElementById("info");
+const pagination=document.getElementById("pagination");
+
+const params=new URLSearchParams(location.search);
+const query=params.get("q")||"";
+let page=Math.max(1,parseInt(params.get("page")||"1",10)||1);
+
+input.value=query;
+
+function esc(t){
+const d=document.createElement("div");
+d.textContent=t||"";
+return d.innerHTML;
+}
+
+function openMenu(){
+document.getElementById("side").classList.add("open");
+document.getElementById("overlay").classList.add("show");
+}
+
+function closeMenu(){
+document.getElementById("side").classList.remove("open");
+document.getElementById("overlay").classList.remove("show");
+}
+
+function search(e){
+if(e)e.preventDefault();
+const q=input.value.trim();
+if(q)location.href="images.html?q="+encodeURIComponent(q);
+}
+
+async function loadImages(){
+if(!query){
+info.textContent="Type something to search for images.";
+return;
+}
+
+info.textContent="Searching Goobrow Images...";
+
+try{
+const r=await fetch("/api/images?q="+encodeURIComponent(query)+"&page="+page);
+if(!r.ok)throw new Error();
+
+const data=await r.json();
+
+info.textContent=data.totalResults+
+" image results for \""+query+"\"";
+
+grid.innerHTML="";
+
+if(!data.results.length){
+grid.innerHTML="<p>No images found yet. Try another search.</p>";
+return;
+}
+
+data.results.forEach(item=>{
+const card=document.createElement("div");
+card.className="card";
+
+card.innerHTML=
+`<a href="${esc(item.url)}" target="_blank" rel="noopener">
+<img src="${esc(item.image)}" alt="${esc(item.title)}"
+loading="lazy"
+onerror="this.style.display='none'">
+<div class="cardbody">
+<h3>${esc(item.title)}</h3>
+<p>${esc(item.description)}</p>
+</div>
+</a>`;
+
+grid.appendChild(card);
+});
+
+pagination.innerHTML="";
+
+const prev=document.createElement("button");
+prev.textContent="Previous";
+prev.disabled=page<=1;
+prev.onclick=()=>goPage(page-1);
+
+const label=document.createElement("span");
+label.textContent="Page "+data.page+" of "+data.totalPages;
+
+const next=document.createElement("button");
+next.textContent="Next";
+next.disabled=page>=data.totalPages;
+next.onclick=()=>goPage(page+1);
+
+pagination.append(prev,label,next);
+
+}catch(e){
+info.textContent="";
+grid.innerHTML="<p>Goobrow could not connect to the search server.</p>";
+}
+}
+
+function goPage(p){
+location.href="images.html?q="+encodeURIComponent(query)+"&page="+p;
+}
+
+loadImages();
+</script>
+</body>
+</html>
