@@ -31,29 +31,11 @@ body{margin:0;font-family:Arial,sans-serif;color:#202124;background:#fff}
 .buttons{display:flex;gap:12px;margin-top:28px}
 .buttons button{border:1px solid #f8f9fa;background:#f8f9fa;padding:11px 18px;border-radius:5px;font-size:14px;cursor:pointer}
 .buttons button:hover{border-color:#dadce0}
-.newsSection{width:min(1050px,94%);margin:55px auto 90px}
-.newsHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.newsHeader h2{font-size:22px;margin:0}
-.newsHeader a{color:#1a73e8;text-decoration:none;font-size:14px}
-.newsGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-.newsCard{border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 1px 4px #0001}
-.newsCard img{width:100%;height:145px;object-fit:cover;display:block}
-.newsCard.noimage{padding-top:0}
-.newsBody{padding:13px}
-.newsTitle{font-size:15px;font-weight:600;line-height:1.4;color:#202124;text-decoration:none}
-.newsTitle:hover{text-decoration:underline}
-.newsSource{font-size:12px;color:#5f6368;margin-top:9px}
-.newsEmpty{color:#70757a;font-size:14px}
-.footer{padding:14px;text-align:center;background:#f2f2f2;color:#70757a;font-size:13px}
-@media(max-width:850px){.newsGrid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:500px){.newsGrid{grid-template-columns:1fr}.newsCard img{height:180px}}
+.footer{position:fixed;bottom:0;width:100%;padding:14px;text-align:center;background:#f2f2f2;color:#70757a;font-size:13px}
 @media(max-width:600px){
 .home{padding-top:90px}.logo{font-size:52px}.buttons{flex-wrap:wrap;justify-content:center}
 }
 </style>
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#ffffff">
-<link rel="icon" href="icon.svg">
 </head>
 <body>
 
@@ -90,16 +72,6 @@ body{margin:0;font-family:Arial,sans-serif;color:#202124;background:#fff}
 <button type="button" onclick="goImages()">Goobrow Images</button>
 </div>
 </main>
-
-<section class="newsSection">
-<div class="newsHeader">
-<h2>📰 Recent & Trending News</h2>
-<a href="results.html?mode=news">View all</a>
-</div>
-<div id="homeNews" class="newsGrid">
-<div class="newsEmpty">Loading recent news...</div>
-</div>
-</section>
 
 <div class="footer">Goobrow Search</div>
 
@@ -178,78 +150,6 @@ document.addEventListener("click",e=>{
   menuPanel.classList.remove("open");
  }
 });
-
-async function loadHomeNews(){
- const box=document.getElementById("homeNews");
- if(!box)return;
-
- try{
-  const r=await fetch("/api/news?q=latest news");
-  const data=await r.json();
-  const news=data.results||[];
-
-  if(!news.length){
-   box.innerHTML='<div class="newsEmpty">Recent news is temporarily unavailable.</div>';
-   return;
-  }
-
-  box.innerHTML=news.slice(0,8).map(item=>{
-   const title=String(item.title||"");
-   const url=String(item.url||"#");
-   const image=String(item.image||"");
-
-   return `
-    <article class="newsCard ${image?"":"noimage"}">
-     ${image ? `<a href="${escapeAttr(url)}" target="_blank" rel="noopener">
-       <img src="${escapeAttr(image)}" loading="lazy" alt="${escapeAttr(title)}">
-     </a>` : ""}
-     <div class="newsBody">
-      <a class="newsTitle" href="${escapeAttr(url)}" target="_blank" rel="noopener">
-       ${escapeHtml(title)}
-      </a>
-      <div class="newsSource">Latest news</div>
-     </div>
-    </article>
-   `;
-  }).join("");
-
- }catch(error){
-  box.innerHTML='<div class="newsEmpty">Recent news is temporarily unavailable.</div>';
- }
-}
-
-function escapeAttr(text){
- return String(text||"")
-  .replace(/&/g,"&amp;")
-  .replace(/"/g,"&quot;")
-  .replace(/</g,"&lt;")
-  .replace(/>/g,"&gt;");
-}
-
-loadHomeNews();
-</script>
-
-<style>
-.goobrow-footer{text-align:center;border-top:1px solid #eee;padding:25px;margin-top:50px;font-size:14px}
-.goobrow-footer a{color:#5f6368;text-decoration:none;margin:0 5px}
-.goobrow-footer a:hover{text-decoration:underline}
-</style>
-
-<footer class="goobrow-footer">
-<a href="about.html">About</a> ·
-<a href="privacy.html">Privacy Policy</a> ·
-<a href="terms.html">Terms</a> ·
-<a href="cookies.html">Cookie Policy</a> ·
-<a href="contact.html">Contact</a>
-</footer>
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js")
-      .then(() => console.log("Goobrow PWA: Service Worker ready"))
-      .catch(err => console.log("Goobrow PWA:", err));
-  });
-}
 </script>
 </body>
 </html>

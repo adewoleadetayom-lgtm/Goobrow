@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Goobrow</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;color:#202124;background:#fff}
+.header{height:64px;display:flex;align-items:center;padding:0 18px;gap:18px}
+.menu{font-size:28px;border:0;background:none;cursor:pointer;color:#444}
+.logo{font-size:34px;font-weight:700;letter-spacing:-3px;text-decoration:none}
+.logo span:nth-child(1){color:#4285f4}.logo span:nth-child(2){color:#ea4335}.logo span:nth-child(3){color:#fbbc05}.logo span:nth-child(4){color:#4285f4}.logo span:nth-child(5){color:#34a853}.logo span:nth-child(6){color:#ea4335}.logo span:nth-child(7){color:#4285f4}
+.side{position:fixed;top:0;left:-290px;width:280px;height:100%;background:#fff;box-shadow:4px 0 20px #0002;z-index:20;padding:20px;transition:.25s}
+.side.open{left:0}.side h2{margin-top:5px}.side a{display:block;padding:15px;border-radius:10px;text-decoration:none;color:#333;font-weight:600}.side a:hover{background:#f1f3f4}
+.close{float:right;border:0;background:none;font-size:24px;cursor:pointer}
+.overlay{display:none;position:fixed;inset:0;background:#0005;z-index:10}.overlay.show{display:block}
+.main{text-align:center;padding-top:75px}.main .logo{font-size:64px}
+.search{margin:30px auto 12px;width:min(680px,90%);height:52px;border:1px solid #dfe1e5;border-radius:28px;display:flex;align-items:center;padding:0 16px;box-shadow:0 1px 6px #20212418}
+.search:focus-within{box-shadow:0 1px 8px #20212435}.search input{flex:1;border:0;outline:0;font-size:17px}.search button{border:0;background:none;font-size:21px;cursor:pointer}
+.suggestions{width:min(680px,90%);margin:auto;text-align:left;border-radius:0 0 14px 14px;overflow:hidden}.suggestion{padding:10px 18px;cursor:pointer;background:#fff}.suggestion:hover{background:#f1f3f4}
+.buttons button{margin:8px 4px;padding:10px 18px;border:1px solid #dadce0;background:#f8f9fa;border-radius:5px;cursor:pointer}
+.news{width:min(900px,92%);margin:70px auto;text-align:left}.news h2{font-size:22px}.newsgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.card{border:1px solid #e0e0e0;border-radius:14px;padding:18px;background:#fff}.card h3{margin-top:0;color:#1a0dab}.card a{text-decoration:none;color:inherit}.muted{color:#666;font-size:14px;line-height:1.5}
+@media(max-width:700px){.main{padding-top:45px}.main .logo{font-size:52px}.newsgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header class="header">
+<button class="menu" onclick="openMenu()">☰</button>
+<a class="logo" href="index.html"><span>G</span><span>o</span><span>o</span><span>b</span><span>r</span><span>o</span><span>w</span></a>
+</header>
+
+<div id="overlay" class="overlay" onclick="closeMenu()"></div>
+
+<aside id="side" class="side">
+<button class="close" onclick="closeMenu()">×</button>
+<h2>Goobrow Menu</h2>
+<a href="index.html">🏠 Home</a>
+<a href="index.html#news">📰 News</a>
+<a href="results.html">🔎 Search</a>
+
+</a>
+<a href="extensions.html">🧩 Extensions</a>
+<a href="https://www.wikipedia.org" target="_blank">📚 Wikipedia</a>
+<a href="https://www.mozilla.org/firefox/" target="_blank">🌐 Firefox</a>
+</aside>
+
+<main class="main">
+<div class="logo"><span>G</span><span>o</span><span>o</span><span>b</span><span>r</span><span>o</span><span>w</span></div>
+
+<form class="search" onsubmit="doSearch(event)">
+<input id="searchInput" autocomplete="off" placeholder="Search with Goobrow">
+<button>🔎</button>
+</form>
+
+<div id="suggestions" class="suggestions"></div>
+
+<div class="buttons">
+<button onclick="doSearch()">Goobrow Search</button>
+<button onclick="location.href='#news'">I'm Feeling Lucky</button>
+</div>
+
+<section id="news" class="news">
+<h2>📰 Latest News & Discoveries</h2>
+<div id="newsgrid" class="newsgrid">
+<div class="card"><p class="muted">Loading news from the Goobrow index...</p></div>
+</div>
+</section>
+</main>
+
+<script>
+const input=document.getElementById("searchInput");
+const suggestions=document.getElementById("suggestions");
+
+function openMenu(){document.getElementById("side").classList.add("open");document.getElementById("overlay").classList.add("show")}
+function closeMenu(){document.getElementById("side").classList.remove("open");document.getElementById("overlay").classList.remove("show")}
+
+function esc(t){
+const d=document.createElement("div");
+d.textContent=t||"";
+return d.innerHTML;
+}
+
+function doSearch(e){
+if(e)e.preventDefault();
+const q=input.value.trim();
+if(q)location.href="results.html?q="+encodeURIComponent(q);
+}
+
+input.addEventListener("input",async()=>{
+const q=input.value.trim();
+if(!q){suggestions.innerHTML="";return}
+try{
+const r=await fetch("/api/suggestions?q="+encodeURIComponent(q));
+const d=await r.json();
+suggestions.innerHTML=(d.suggestions||[]).map(x=>
+`<div class="suggestion" onclick="input.value=${JSON.stringify(x)};doSearch()">${esc(x)}</div>`
+).join("");
+}catch(e){suggestions.innerHTML=""}
+});
+
+async function loadNews(){
+try{
+const r=await fetch("/api/search?q=news&page=1");
+const d=await r.json();
+const items=(d.results||[]).slice(0,6);
+if(!items.length){
+document.getElementById("newsgrid").innerHTML='<div class="card"><p class="muted">More news will appear as Goobrow crawls more websites.</p></div>';
+return;
+}
+document.getElementById("newsgrid").innerHTML=items.map(x=>
+`<div class="card"><a href="${esc(x.url)}" target="_blank" rel="noopener"><h3>${esc(x.title)}</h3><p class="muted">${esc(x.description)}</p></a></div>`
+).join("");
+}catch(e){
+document.getElementById("newsgrid").innerHTML='<div class="card"><p class="muted">News will appear when the search server is running.</p></div>';
+}
+}
+loadNews();
+</script>
+</body>
+</html>

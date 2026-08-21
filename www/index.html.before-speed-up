@@ -51,9 +51,6 @@ body{margin:0;font-family:Arial,sans-serif;color:#202124;background:#fff}
 .home{padding-top:90px}.logo{font-size:52px}.buttons{flex-wrap:wrap;justify-content:center}
 }
 </style>
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#ffffff">
-<link rel="icon" href="icon.svg">
 </head>
 <body>
 
@@ -227,29 +224,6 @@ function escapeAttr(text){
 }
 
 loadHomeNews();
-</script>
-
-<style>
-.goobrow-footer{text-align:center;border-top:1px solid #eee;padding:25px;margin-top:50px;font-size:14px}
-.goobrow-footer a{color:#5f6368;text-decoration:none;margin:0 5px}
-.goobrow-footer a:hover{text-decoration:underline}
-</style>
-
-<footer class="goobrow-footer">
-<a href="about.html">About</a> ·
-<a href="privacy.html">Privacy Policy</a> ·
-<a href="terms.html">Terms</a> ·
-<a href="cookies.html">Cookie Policy</a> ·
-<a href="contact.html">Contact</a>
-</footer>
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js")
-      .then(() => console.log("Goobrow PWA: Service Worker ready"))
-      .catch(err => console.log("Goobrow PWA:", err));
-  });
-}
 </script>
 </body>
 </html>

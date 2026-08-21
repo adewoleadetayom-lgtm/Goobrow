@@ -5,38 +5,6 @@ const cors = require("cors");
 const cheerio = require("cheerio");
 
 const app = express();
-
-// GOOBROW_FAST_CACHE
-const GOOBROW_SEARCH_CACHE = new Map();
-const GOOBROW_CACHE_TTL = 60 * 1000;
-const GOOBROW_SEARCH_TIMEOUT = 5000;
-
-function fastSearchCacheGet(key){
-  const item=GOOBROW_SEARCH_CACHE.get(key);
-  if(!item) return null;
-  if(Date.now()-item.time > GOOBROW_CACHE_TTL){
-    GOOBROW_SEARCH_CACHE.delete(key);
-    return null;
-  }
-  return item.data;
-}
-
-function fastSearchCacheSet(key,data){
-  GOOBROW_SEARCH_CACHE.set(key,{time:Date.now(),data});
-  if(GOOBROW_SEARCH_CACHE.size>50){
-    const first=GOOBROW_SEARCH_CACHE.keys().next().value;
-    GOOBROW_SEARCH_CACHE.delete(first);
-  }
-}
-
-function fastFetch(url,options={}){
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),GOOBROW_SEARCH_TIMEOUT);
-  return fetch(url,{...options,signal:controller.signal})
-    .finally(()=>clearTimeout(timer));
-}
-
-
 const PORT = 3001;
 
 app.use(cors());
@@ -175,171 +143,95 @@ async function goobrowWebSearch(query){
 }
 
 
-
-// GOOBROW_SEARCH_CACHE_ACTIVE
-app.use("/api/search", async (req,res,next)=>{
-  const q=String(req.query.q||"").trim().toLowerCase();
-  if(!q) return next();
-
-  const cached=fastSearchCacheGet(q);
-  if(cached){
-    res.set("X-Goobrow-Cache","HIT");
-    return res.json(cached);
-  }
-
-  const originalJson=res.json.bind(res);
-  res.json=(data)=>{
-    fastSearchCacheSet(q,data);
-    res.set("X-Goobrow-Cache","MISS");
-    return originalJson(data);
-  };
-
-  next();
-});
-
 app.get("/api/search", async (req,res)=>{
-  const query=String(req.query.q||"").trim();
-  if(!query) return res.json({engine:"Goobrow",query:"",results:[]});
+  const query = String(req.query.q || "").trim();
 
-  const cacheKey=query.toLowerCase();
-  const cached=fastSearchCacheGet(cacheKey);
-  if(cached){
-    res.set("X-Goobrow-Cache","HIT");
-    return res.json(cached);
-  }
-
-  const clean=x=>String(x||"")
-    .replace(/<[^>]*>/g," ")
-    .replace(/&amp;/g,"&")
-    .replace(/&quot;/g,'"')
-    .replace(/&#39;/g,"'")
-    .replace(/&#x27;/g,"'")
-    .replace(/&nbsp;/g," ")
-    .replace(/\s+/g," ")
-    .trim();
-
-  async function duckSearch(){
-    const url="https://html.duckduckgo.com/html/?q="+encodeURIComponent(query);
-    const response=await fastFetch(url,{
-      headers:{
-        "User-Agent":"Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
-        "Accept-Language":"en-US,en;q=0.9"
-      }
+  if(!query){
+    return res.status(400).json({
+      error: "Please enter a search query."
     });
-
-    if(!response.ok) throw new Error("DuckDuckGo: "+response.status);
-
-    const html=await response.text();
-    const results=[];
-    const seen=new Set();
-
-    const blocks=html.split(/result__body/i);
-
-    for(const block of blocks){
-      if(results.length>=10) break;
-
-      const link=block.match(/result__a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i);
-      if(!link) continue;
-
-      let articleUrl=link[1];
-      const title=clean(link[2]);
-
-      const uddg=articleUrl.match(/[?&]uddg=([^&]+)/i);
-      if(uddg){
-        try{ articleUrl=decodeURIComponent(uddg[1]); }catch{}
-      }
-
-      if(!/^https?:\/\//i.test(articleUrl)) continue;
-      if(!title || seen.has(articleUrl)) continue;
-
-      const snippetMatch=block.match(/result__snippet[^>]*>([\s\S]*?)<\/(?:a|div)/i);
-      const description=snippetMatch ? clean(snippetMatch[1]) : "";
-
-      seen.add(articleUrl);
-      results.push({
-        title,
-        url:articleUrl,
-        description
-      });
-    }
-
-    if(!results.length) throw new Error("No DuckDuckGo results");
-    return results;
-  }
-
-  async function bingSearch(){
-    const url="https://www.bing.com/search?q="+encodeURIComponent(query);
-    const response=await fastFetch(url,{
-      headers:{
-        "User-Agent":"Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
-        "Accept-Language":"en-US,en;q=0.9"
-      }
-    });
-
-    if(!response.ok) throw new Error("Bing: "+response.status);
-
-    const html=await response.text();
-    const results=[];
-    const seen=new Set();
-
-    const blocks=html.split(/<li[^>]+class=["'][^"']*b_algo[^"']*["'][^>]*>/i);
-
-    for(const block of blocks){
-      if(results.length>=10) break;
-
-      const link=block.match(/<h2[^>]*>\s*<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i);
-      if(!link) continue;
-
-      const articleUrl=link[1];
-      const title=clean(link[2]);
-
-      if(!/^https?:\/\//i.test(articleUrl)) continue;
-      if(!title || seen.has(articleUrl)) continue;
-
-      const paragraph=block.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
-
-      seen.add(articleUrl);
-      results.push({
-        title,
-        url:articleUrl,
-        description:paragraph ? clean(paragraph[1]) : ""
-      });
-    }
-
-    if(!results.length) throw new Error("No Bing results");
-    return results;
   }
 
   try{
-    let results;
+    const results = await goobrowWebSearch(query);
+
+    return res.json({
+      engine: "Goobrow Web Search",
+      query,
+      totalResults: results.length,
+      page: 1,
+      pageSize: results.length,
+      totalPages: 1,
+      results
+    });
+  }catch(error){
+    console.error(
+      "Goobrow web search failed:",
+      error.message
+    );
+
+    /*
+     * Fallback to the existing local Goobrow index.
+     */
+    const indexFile = path.join(
+      __dirname,
+      "data",
+      "index.json"
+    );
+
+    let index = [];
 
     try{
-      results=await duckSearch();
-    }catch{
-      results=await bingSearch();
-    }
+      if(fs.existsSync(indexFile)){
+        index = JSON.parse(
+          fs.readFileSync(indexFile,"utf8")
+        );
+      }
+    }catch{}
 
-    const data={
-      engine:"Goobrow Fast Search",
+    const q = query.toLowerCase();
+
+    const results = index
+      .map(page => {
+        const title = String(page.title || "");
+        const text = String(page.text || "");
+        const url = String(page.url || "");
+
+        let score = 0;
+
+        if(title.toLowerCase().includes(q)) score += 40;
+        if(text.toLowerCase().includes(q)) score += 20;
+        if(url.toLowerCase().includes(q)) score += 10;
+
+        return {
+          page,
+          score
+        };
+      })
+      .filter(x => x.score > 0)
+      .sort((a,b) => b.score - a.score)
+      .slice(0,10)
+      .map(x => ({
+        title: x.page.title,
+        url: x.page.url,
+        description: String(x.page.text || "")
+          .replace(/\s+/g," ")
+          .trim()
+          .slice(0,300)
+      }));
+
+    res.json({
+      engine: "Goobrow Local Index",
       query,
+      totalResults: results.length,
+      page: 1,
+      pageSize: results.length,
+      totalPages: 1,
       results
-    };
-
-    fastSearchCacheSet(cacheKey,data);
-    res.set("X-Goobrow-Cache","MISS");
-    return res.json(data);
-
-  }catch(error){
-    console.error("Goobrow search failed:",error.message);
-
-    return res.status(200).json({
-      engine:"Goobrow Fast Search",
-      query,
-      results:[],
-      error:"Search temporarily unavailable"
     });
   }
 });
+
 
 app.get("/api/suggestions", async (req,res)=>{
   const query = String(req.query.q || "").trim();
@@ -679,14 +571,13 @@ app.get("/api/videos", async (req,res)=>{
       }
     });
 
-    if(!response.ok){
-      throw new Error("Bing request failed: "+response.status);
-    }
+    if(!response.ok) throw new Error("Video request failed");
 
     const html=await response.text();
-
     const results=[];
     const seen=new Set();
+
+    const blocks=html.split(/<li[^>]+class=["'][^"']*mc_vtvc[^"']*["'][^>]*>/i);
 
     const clean=x=>String(x||"")
       .replace(/<[^>]*>/g," ")
@@ -694,88 +585,30 @@ app.get("/api/videos", async (req,res)=>{
       .replace(/&quot;/g,'"')
       .replace(/&#39;/g,"'")
       .replace(/&nbsp;/g," ")
-      .replace(/&#x27;/g,"'")
       .replace(/\s+/g," ")
       .trim();
 
-    // Extract each Bing video card.
-    const cardRegex=/<div[^>]+id=["']mc_vtvc_video_[^"']+["'][\s\S]*?<\/div><\/div><\/a><\/div>/gi;
-
-    let match;
-
-    while((match=cardRegex.exec(html))!==null){
-
+    for(const block of blocks){
       if(results.length>=12) break;
 
-      const block=match[0];
+      const linkMatch=block.match(/<a[^>]+href=["']([^"']+)["']/i);
+      const titleMatch=block.match(/<a[^>]+class=["'][^"']*mc_vtvc_title[^"']*["'][^>]*>([\s\S]*?)<\/a>/i);
+      const imgMatch=block.match(/<img[^>]+(?:src|data-src)=["']([^"']+)["']/i);
 
-      // Bing provides the actual destination as "ourl".
-      const urlMatch=block.match(
-        /ourl=["'](https?:\/\/[^"']+)["']/i
-      );
+      if(!linkMatch||!titleMatch) continue;
 
-      // Also accept murl/pgurl from the embedded metadata.
-      const metaMatch=block.match(
-        /"murl":"(https?:\/\/[^"]+)"/i
-      );
+      let url=linkMatch[1];
+      if(url.startsWith("//")) url="https:"+url;
 
-      const pgMatch=block.match(
-        /"pgurl":"(https?:\/\/[^"]+)"/i
-      );
+      const title=clean(titleMatch[1]);
+      if(!title||seen.has(url)) continue;
 
-      let videoUrl=
-        urlMatch?.[1] ||
-        metaMatch?.[1] ||
-        pgMatch?.[1] ||
-        "";
-
-      videoUrl=clean(videoUrl);
-
-      if(!videoUrl) continue;
-
-      // Extract title.
-      const titleMatch=block.match(
-        /class=["'][^"']*mc_vtvc_title[^"']*["'][^>]*>([\s\S]*?)<\/div>/i
-      );
-
-      let title=titleMatch ? clean(titleMatch[1]) : "";
-
-      if(!title){
-        const aria=block.match(
-          /aria-label=["']([^"']+)["']/i
-        );
-
-        if(aria){
-          title=clean(aria[1])
-            .replace(/\s*[·•].*$/,"")
-            .trim();
-        }
-      }
-
-      if(!title) title="Video";
-
-      // Extract the high-quality Bing thumbnail.
-      const imageMatch=
-        block.match(/data-src-hq=["'](https?:\/\/[^"']+)["']/i) ||
-        block.match(/src=["'](https?:\/\/[^"']+)["']/i) ||
-        block.match(/"turl":"(https?:\/\/[^"]+)"/i);
-
-      let image=imageMatch ? clean(imageMatch[1]) : null;
-
-      if(image){
-        image=image.replace(/&amp;/g,"&");
-      }
-
-      const key=videoUrl+"|"+title;
-
-      if(seen.has(key)) continue;
-
-      seen.add(key);
+      seen.add(url);
 
       results.push({
         title,
-        url:videoUrl,
-        image
+        url,
+        image:imgMatch ? imgMatch[1] : null
       });
     }
 
@@ -786,12 +619,7 @@ app.get("/api/videos", async (req,res)=>{
     });
 
   }catch(error){
-
-    console.error(
-      "Goobrow video search failed:",
-      error.message
-    );
-
+    console.error("Goobrow video search failed:",error.message);
     res.json({
       engine:"Goobrow Videos",
       query,
@@ -799,7 +627,6 @@ app.get("/api/videos", async (req,res)=>{
     });
   }
 });
-
 
 app.get("/api/page-image",async(req,res)=>{
   const url=String(req.query.url||"").trim();
