@@ -131,6 +131,7 @@ body{
 
 </div>
 
+<div id="history" style="width:min(700px,92%);margin:15px 0 0 6%;"></div>
 <div class="results" id="results">
 <p class="loading">Searching Goobrow...</p>
 </div>
@@ -261,6 +262,54 @@ function escapeHtml(text){
 
   return div.innerHTML;
 }
+
+
+function saveSearchHistory(){
+  const q=query.trim();
+  if(!q)return;
+
+  let history=[];
+  try{
+    history=JSON.parse(localStorage.getItem("goobrow_history")||"[]");
+  }catch(_){
+    history=[];
+  }
+
+  history=history.filter(item=>item.toLowerCase()!==q.toLowerCase());
+  history.unshift(q);
+  history=history.slice(0,10);
+
+  localStorage.setItem("goobrow_history",JSON.stringify(history));
+}
+
+function showSearchHistory(){
+  const box=document.getElementById("history");
+  if(!box)return;
+
+  let history=[];
+  try{
+    history=JSON.parse(localStorage.getItem("goobrow_history")||"[]");
+  }catch(_){
+    history=[];
+  }
+
+  if(!history.length){
+    box.innerHTML="";
+    return;
+  }
+
+  box.innerHTML=
+    '<div style="font-size:13px;color:#70757a;margin-bottom:8px;">Recent searches</div>'+
+    history.map(item=>
+      '<button onclick="location.href=\'results.html?q='+encodeURIComponent(item)+'\'" '+
+      'style="margin:0 7px 7px 0;padding:7px 12px;border:1px solid #dadce0;border-radius:18px;background:#fff;cursor:pointer;">'+
+      escapeHtml(item)+
+      '</button>'
+    ).join("");
+}
+
+saveSearchHistory();
+showSearchHistory();
 
 loadResults();
 
