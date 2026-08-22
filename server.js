@@ -520,39 +520,62 @@ try {
 function localIndexSearch(query) {
   const words = String(query || "")
     .toLowerCase()
+    .replace(/[^\w\s]/g, " ")
     .split(/\s+/)
-    .map(x => x.replace(/[^a-z0-9]+/g, ""))
-    .filter(x => x.length >= 2);
+    .filter(Boolean);
 
   if (!words.length || !Array.isArray(goobrowLocalIndex)) return [];
+
+  const stopWords = new Set([
+    "what","is","are","the","a","an","of","to","in","on",
+    "for","how","why","when","where","who","does","do",
+    "can","and","or","with","from","about"
+  ]);
+
+  const importantWords = words.filter(w => !stopWords.has(w));
+  const searchWords = importantWords.length ? importantWords : words;
 
   const scored = [];
 
   for (const page of goobrowLocalIndex) {
     const title = String(page.title || "");
     const text = String(page.text || "");
-    const haystack = (title + " " + text).toLowerCase();
+    const url = String(page.url || "");
+
+    const titleLower = title.toLowerCase();
+    const textLower = text.toLowerCase();
 
     let score = 0;
 
-    for (const word of words) {
-      if (title.toLowerCase().includes(word)) score += 10;
-      if (haystack.includes(word)) score += 2;
+    for (const word of searchWords) {
+      if (titleLower === word) score += 100;
+      if (titleLower.includes(word)) score += 30;
+      if (textLower.includes(word)) score += 5;
+      if (url.toLowerCase().includes(word)) score += 3;
+    }
+
+    // Reward pages matching multiple important words.
+    if (searchWords.length > 1) {
+      const matched = searchWords.filter(w =>
+        titleLower.includes(w) || textLower.includes(w)
+      ).length;
+
+      score += matched * 10;
     }
 
     if (score > 0) {
       scored.push({
         score,
         result: {
-          title: title || page.url,
-          url: page.url,
+          title: title || url,
+          url,
           description: text.slice(0, 300)
         }
       });
     }
   }
 
-  scored.sort((a,b) => b.score - a.score);
+  scored.sort((a, b) => b.score - a.score);
 
   return scored
     .slice(0, 10)
