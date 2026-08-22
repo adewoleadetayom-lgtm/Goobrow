@@ -455,6 +455,35 @@ app.use("/api/search", async (req,res,next)=>{
   next();
 });
 
+
+// GOOBROW FAST SEARCH CACHE
+const goobrowSearchCache = new Map();
+const GOOBROW_CACHE_TTL = 5 * 60 * 1000;
+
+function fastSearchCacheGet(key){
+  const item = goobrowSearchCache.get(key);
+  if(!item) return null;
+
+  if(Date.now() - item.time > GOOBROW_CACHE_TTL){
+    goobrowSearchCache.delete(key);
+    return null;
+  }
+
+  return item.data;
+}
+
+function fastSearchCacheSet(key,data){
+  goobrowSearchCache.set(key,{
+    time:Date.now(),
+    data
+  });
+
+  if(goobrowSearchCache.size > 100){
+    const firstKey=goobrowSearchCache.keys().next().value;
+    if(firstKey) goobrowSearchCache.delete(firstKey);
+  }
+}
+
 app.get("/api/search", async (req,res)=>{
   const query=String(req.query.q||"").trim();
   if(!query) return res.json({engine:"Goobrow",query:"",results:[]});
