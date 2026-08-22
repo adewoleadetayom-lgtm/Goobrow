@@ -571,6 +571,59 @@ app.get("/api/search", async (req,res)=>{
     return results;
   }
 
+
+  async function googleSearch(){
+    const url="https://www.google.com/search?q="+encodeURIComponent(query);
+
+    const response=await fastFetch(url,{
+      headers:{
+        "User-Agent":"Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
+        "Accept-Language":"en-US,en;q=0.9"
+      }
+    });
+
+    if(!response.ok) throw new Error("Google: "+response.status);
+
+    const html=await response.text();
+    const results=[];
+    const seen=new Set();
+
+    const cleanGoogle=x=>String(x||"")
+      .replace(/<[^>]*>/g," ")
+      .replace(/&amp;/g,"&")
+      .replace(/&quot;/g,'"')
+      .replace(/&#39;/g,"'")
+      .replace(/&#x27;/g,"'")
+      .replace(/\s+/g," ")
+      .trim();
+
+    const blocks=html.split(/<div[^>]+class=["'][^"']*(?:MjjYud|tF2Cxc)[^"']*["'][^>]*>/i);
+
+    for(const block of blocks){
+      if(results.length>=10) break;
+
+      const link=block.match(/<a[^>]+href=["'](https?:\/\/[^"'#]+)["'][^>]*>([\s\S]*?)<\/a>/i);
+      if(!link) continue;
+
+      const articleUrl=link[1];
+      const title=cleanGoogle(link[2]);
+
+      if(!title || title.length<2 || seen.has(articleUrl)) continue;
+
+      seen.add(articleUrl);
+
+      results.push({
+        title,
+        url:articleUrl,
+        description:""
+      });
+    }
+
+    if(!results.length) throw new Error("No Google results");
+
+    return results;
+  }
+
   async function bingSearch(){
     const url="https://www.bing.com/search?q="+encodeURIComponent(query);
     const response=await fastFetch(url,{
