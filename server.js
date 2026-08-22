@@ -583,9 +583,9 @@ function localIndexSearch(query) {
 }
 
 app.get("/api/search", async (req,res)=>{
-  const originalQuery = String(req.query.q || "").trim();
+  const query = String(req.query.q || "").trim();
 
-  if(!originalQuery){
+  if(!query){
     return res.json({
       engine:"Goobrow Search",
       query:"",
@@ -593,46 +593,9 @@ app.get("/api/search", async (req,res)=>{
     });
   }
 
-  /*
-   * GOOBROW SMART QUERY CLEANING
-   * Turns questions such as:
-   * "What is a noun?"
-   * into useful search terms:
-   * "noun"
-   */
-  const stopWords = new Set([
-    "what","is","are","was","were","the","a","an",
-    "of","to","in","on","for","and","or","how",
-    "why","when","where","who","which","can",
-    "does","do","did","please","tell","me","about"
-  ]);
-
-  const words = originalQuery
-    .toLowerCase()
-    .replace(/[^\w\s]/g," ")
-    .split(/\s+/)
-    .filter(Boolean);
-
-  const importantWords = words.filter(w =>
-    w.length > 1 && !stopWords.has(w)
-  );
-
-  const searchQuery =
-    importantWords.length
-      ? importantWords.join(" ")
-      : originalQuery;
-
-  const cacheKey = originalQuery.toLowerCase();
-
-  try{
-    const cached = fastSearchCacheGet(cacheKey);
-    if(cached){
-      res.set("X-Goobrow-Cache","HIT");
-      return res.json(cached);
-    }
-  }catch{}
-
   const clean = x => String(x || "")
+    .replace(/<script[\s\S]*?<\/script>/gi," ")
+    .replace(/<style[\s\S]*?<\/style>/gi," ")
     .replace(/<[^>]*>/g," ")
     .replace(/&amp;/g,"&")
     .replace(/&quot;/g,'"')
@@ -642,134 +605,242 @@ app.get("/api/search", async (req,res)=>{
     .replace(/\s+/g," ")
     .trim();
 
-  let results = [];
+  const results = [];
+  const seen = new Set();
 
-  /*
-   * 1. DuckDuckGo
-   */
-  try{
-    const url =
-      "https://html.duckduckgo.com/html/?q=" +
-      encodeURIComponent(originalQuery);
+  function addResult(title,url,description="",source=""){
+    title = clean(title);
+    url = String(url || "").trim();
+    description = clean(description);
 
-    const r = await fetch(url,{
-      headers:{
-        "User-Agent":
-          "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
-        "Accept-Language":"en-US,en;q=0.9"
-      }
+    if(!title || title.length < 2) return;
+    if(!/^https?:\/\//i.test(url)) return;
+
+    const key = url.toLowerCase().replace(/\/+$/,"");
+
+    if(seen.has(key)) return;
+
+    seen.add(key);
+
+    results.push({
+      title,
+      url,
+      description
     });
-
-    if(r.ok){
-      const html = await r.text();
-      const blocks = html.split(/result__body/i);
-      const seen = new Set();
-
-      for(const block of blocks){
-        if(results.length >= 10) break;
-
-        const m = block.match(
-          /result__a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i
-        );
-
-        if(!m) continue;
-
-        let url = m[1];
-        const title = clean(m[2]);
-
-        const uddg = url.match(/[?&]uddg=([^&]+)/i);
-
-        if(uddg){
-          try{
-            url = decodeURIComponent(uddg[1]);
-          }catch{}
-        }
-
-        if(!/^https?:\/\//i.test(url)) continue;
-        if(!title || seen.has(url)) continue;
-
-        const sm = block.match(
-          /result__snippet[^>]*>([\s\S]*?)<\/(?:a|div)/i
-        );
-
-        seen.add(url);
-
-        results.push({
-          title,
-          url,
-          description: sm ? clean(sm[1]) : ""
-        });
-      }
-    }
-  }catch(error){
-    console.error("DuckDuckGo unavailable:",error.message);
   }
 
   /*
-   * 2. Bing
+   * =====================================================
+   * 1. GOOGLE CUSTOM SEARCH JSON API — PRIMARY
+   * =====================================================
+   *
+   * Required:
+   * GOOGLE_API_KEY
+   * GOOGLE_CX
+   *
+   * If these are not configured, Goobrow skips Google
+   * and safely continues to the backup sources.
    */
-  if(!results.length){
+  const googleKey =
+    process.env.GOOGLE_API_KEY || "";
+
+  const googleCx =
+    process.env.GOOGLE_CX || "";
+
+  if(googleKey && googleCx){
+    try{
+      const googleUrl =
+        "https://www.googleapis.com/customsearch/v1" +
+        "?key=" + encodeURIComponent(googleKey) +
+        "&cx=" + encodeURIComponent(googleCx) +
+        "&num=10" +
+        "&q=" + encodeURIComponent(query);
+
+      const response = await fetch(googleUrl);
+
+      if(response.ok){
+        const data = await response.json();
+
+        if(Array.isArray(data.items)){
+          for(const item of data.items){
+            if(results.length >= 10) break;
+
+            addResult(
+              item.title,
+              item.link,
+              item.snippet || "",
+              "Google"
+            );
+          }
+        }
+
+        console.log(
+          "Goobrow Google API results:",
+          results.length
+        );
+      }else{
+        console.error(
+          "Google API HTTP:",
+          response.status
+        );
+      }
+    }catch(error){
+      console.error(
+        "Google API failed:",
+        error.message
+      );
+    }
+  }else{
+    console.log(
+      "Google API not configured. Set GOOGLE_API_KEY and GOOGLE_CX."
+    );
+  }
+
+  /*
+   * =====================================================
+   * 2. DUCKDUCKGO — BACKUP
+   * =====================================================
+   */
+  if(results.length < 3){
     try{
       const url =
-        "https://www.bing.com/search?q=" +
-        encodeURIComponent(originalQuery);
+        "https://html.duckduckgo.com/html/?q=" +
+        encodeURIComponent(query);
 
-      const r = await fetch(url,{
+      const response = await fetch(url,{
         headers:{
           "User-Agent":
             "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
-          "Accept-Language":"en-US,en;q=0.9"
+          "Accept-Language":
+            "en-US,en;q=0.9"
         }
       });
 
-      if(r.ok){
-        const html = await r.text();
+      if(response.ok){
+        const html = await response.text();
+
+        const blocks =
+          html.split(/result__body/i);
+
+        for(const block of blocks){
+          if(results.length >= 10) break;
+
+          const link =
+            block.match(
+              /result__a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i
+            );
+
+          if(!link) continue;
+
+          let url = link[1];
+          const title = clean(link[2]);
+
+          const uddg =
+            url.match(/[?&]uddg=([^&]+)/i);
+
+          if(uddg){
+            try{
+              url = decodeURIComponent(uddg[1]);
+            }catch{}
+          }
+
+          const snippet =
+            block.match(
+              /result__snippet[^>]*>([\s\S]*?)<\/(?:a|div)/i
+            );
+
+          addResult(
+            title,
+            url,
+            snippet ? clean(snippet[1]) : "",
+            "DuckDuckGo"
+          );
+        }
+      }
+
+      console.log(
+        "Goobrow DuckDuckGo results:",
+        results.length
+      );
+    }catch(error){
+      console.error(
+        "DuckDuckGo failed:",
+        error.message
+      );
+    }
+  }
+
+  /*
+   * =====================================================
+   * 3. BING — BACKUP
+   * =====================================================
+   */
+  if(results.length < 3){
+    try{
+      const url =
+        "https://www.bing.com/search?q=" +
+        encodeURIComponent(query);
+
+      const response = await fetch(url,{
+        headers:{
+          "User-Agent":
+            "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
+          "Accept-Language":
+            "en-US,en;q=0.9"
+        }
+      });
+
+      if(response.ok){
+        const html = await response.text();
+
         const blocks =
           html.split(
             /<li[^>]+class=["'][^"']*b_algo[^"']*["'][^>]*>/i
           );
 
-        const seen = new Set();
-
         for(const block of blocks){
           if(results.length >= 10) break;
 
-          const m = block.match(
-            /<h2[^>]*>\s*<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i
-          );
+          const link =
+            block.match(
+              /<h2[^>]*>\s*<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i
+            );
 
-          if(!m) continue;
+          if(!link) continue;
 
-          const url = m[1];
-          const title = clean(m[2]);
+          const url = link[1];
+          const title = clean(link[2]);
 
-          if(!/^https?:\/\//i.test(url)) continue;
-          if(!title || seen.has(url)) continue;
-
-          const sm =
+          const snippet =
             block.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
 
-          seen.add(url);
-
-          results.push({
+          addResult(
             title,
             url,
-            description: sm ? clean(sm[1]) : ""
-          });
+            snippet ? clean(snippet[1]) : "",
+            "Bing"
+          );
         }
       }
+
+      console.log(
+        "Goobrow Bing results:",
+        results.length
+      );
     }catch(error){
-      console.error("Bing unavailable:",error.message);
+      console.error(
+        "Bing failed:",
+        error.message
+      );
     }
   }
 
   /*
-   * 3. Wikipedia SMART SEARCH
-   *
-   * Uses the important words rather than unnecessary
-   * question words.
+   * =====================================================
+   * 4. WIKIPEDIA — BACKUP
+   * =====================================================
    */
-  if(!results.length){
+  if(results.length < 3){
     try{
       const url =
         "https://en.wikipedia.org/w/api.php" +
@@ -780,121 +851,123 @@ app.get("/api/search", async (req,res)=>{
         "&origin=*" +
         "&srlimit=10" +
         "&srsearch=" +
-        encodeURIComponent(searchQuery);
+        encodeURIComponent(query);
 
-      const r = await fetch(url,{
+      const response = await fetch(url,{
         headers:{
-          "User-Agent":"Goobrow/1.0 Search Engine"
+          "User-Agent":
+            "Goobrow/1.0 Search Engine"
         }
       });
 
-      if(r.ok){
-        const data = await r.json();
+      if(response.ok){
+        const data = await response.json();
 
         if(
           data.query &&
           Array.isArray(data.query.search)
         ){
-          results = data.query.search.map(item => ({
-            title:item.title,
-            url:
+          for(const item of data.query.search){
+            if(results.length >= 10) break;
+
+            addResult(
+              item.title,
               "https://en.wikipedia.org/wiki/" +
-              encodeURIComponent(
-                item.title.replace(/ /g,"_")
-              ),
-            description:clean(item.snippet)
-          }));
+                encodeURIComponent(
+                  item.title.replace(/ /g,"_")
+                ),
+              clean(item.snippet),
+              "Wikipedia"
+            );
+          }
         }
       }
+
+      console.log(
+        "Goobrow Wikipedia results:",
+        results.length
+      );
     }catch(error){
       console.error(
-        "Wikipedia unavailable:",
+        "Wikipedia failed:",
         error.message
       );
     }
   }
 
   /*
-   * 4. LOCAL GOOBROW INDEX
+   * =====================================================
+   * 5. LOCAL GOOBROW INDEX — FINAL FALLBACK
+   * =====================================================
    */
-  if(!results.length){
+  if(results.length === 0){
     try{
-      results = localIndexSearch(searchQuery);
+      const local =
+        localIndexSearch(query) || [];
+
+      for(const item of local){
+        if(results.length >= 10) break;
+
+        addResult(
+          item.title,
+          item.url,
+          item.description || "",
+          "Goobrow"
+        );
+      }
+
+      console.log(
+        "Goobrow local results:",
+        results.length
+      );
     }catch(error){
       console.error(
-        "Local search unavailable:",
+        "Local search failed:",
         error.message
       );
     }
   }
 
   /*
-   * 5. SMART RESULT RANKING
+   * =====================================================
+   * FINAL GOOBROW OUTPUT
+   *
+   * Source names are deliberately NOT returned.
+   * Everything is presented as Goobrow results.
+   * =====================================================
    */
-  if(results.length){
-    const ranked = results.map(item => {
-
-      const title = String(item.title || "").toLowerCase();
-      const description =
-        String(item.description || "").toLowerCase();
-
-      let score = 0;
-
-      for(const word of importantWords){
-
-        if(title === word)
-          score += 100;
-
-        if(title.includes(word))
-          score += 40;
-
-        if(description.includes(word))
-          score += 10;
-      }
-
-      /*
-       * Exact multi-word phrase gets extra priority.
-       */
-      const phrase = importantWords.join(" ");
-
-      if(
-        phrase.length > 2 &&
-        title.includes(phrase)
-      ){
-        score += 100;
-      }
-
-      return {
-        ...item,
-        _score:score
-      };
-    });
-
-    ranked.sort((a,b) => b._score - a._score);
-
-    results = ranked
-      .slice(0,10)
-      .map(({_score,...item}) => item);
-  }
+  const finalResults =
+    results.slice(0,10).map(item=>({
+      title:item.title,
+      url:item.url,
+      description:item.description
+    }));
 
   const data = {
     engine:"Goobrow Search",
-    query:originalQuery,
-    results
+    query,
+    results:finalResults
   };
 
-  if(results.length){
+  if(finalResults.length){
     try{
-      fastSearchCacheSet(cacheKey,data);
+      fastSearchCacheSet(
+        query.toLowerCase(),
+        data
+      );
     }catch{}
 
-    res.set("X-Goobrow-Cache","MISS");
+    res.set(
+      "X-Goobrow-Cache",
+      "MISS"
+    );
+
     return res.json(data);
   }
 
   return res.status(200).json({
     engine:"Goobrow Search",
-    query:originalQuery,
+    query,
     results:[],
     error:"No results found"
   });
