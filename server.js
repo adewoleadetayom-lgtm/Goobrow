@@ -560,200 +560,196 @@ function localIndexSearch(query) {
 }
 
 app.get("/api/search", async (req,res)=>{
-  const query=String(req.query.q||"").trim();
-  if(!query) return res.json({engine:"Goobrow",query:"",results:[]});
+  const query = String(req.query.q || "").trim();
 
-  const cacheKey=query.toLowerCase();
-  const cached=fastSearchCacheGet(cacheKey);
-  if(cached){
+  if(!query){
+    return res.json({
+      engine:"Goobrow Fast Search",
+      query:"",
+      results:[]
+    });
+  }
+
+  const cacheKey = query.toLowerCase();
+  const cached = fastSearchCacheGet(cacheKey);
+
+  if(cached && Array.isArray(cached.results) && cached.results.length){
     res.set("X-Goobrow-Cache","HIT");
     return res.json(cached);
   }
 
-  const clean=x=>String(x||"")
-    .replace(/<[^>]*>/g," ")
-    .replace(/&amp;/g,"&")
-    .replace(/&quot;/g,'"')
-    .replace(/&#39;/g,"'")
-    .replace(/&#x27;/g,"'")
-    .replace(/&nbsp;/g," ")
-    .replace(/\s+/g," ")
-    .trim();
+  let results = [];
 
-  async function duckSearch(){
-    const url="https://html.duckduckgo.com/html/?q="+encodeURIComponent(query);
-    const response=await fastFetch(url,{
-      headers:{
-        "User-Agent":"Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
-        "Accept-Language":"en-US,en;q=0.9"
-      }
-    });
-
-    if(!response.ok) throw new Error("DuckDuckGo: "+response.status);
-
-    const html=await response.text();
-    const results=[];
-    const seen=new Set();
-
-    const blocks=html.split(/result__body/i);
-
-    for(const block of blocks){
-      if(results.length>=10) break;
-
-      const link=block.match(/result__a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i);
-      if(!link) continue;
-
-      let articleUrl=link[1];
-      const title=clean(link[2]);
-
-      const uddg=articleUrl.match(/[?&]uddg=([^&]+)/i);
-      if(uddg){
-        try{ articleUrl=decodeURIComponent(uddg[1]); }catch{}
-      }
-
-      if(!/^https?:\/\//i.test(articleUrl)) continue;
-      if(!title || seen.has(articleUrl)) continue;
-
-      const snippetMatch=block.match(/result__snippet[^>]*>([\s\S]*?)<\/(?:a|div)/i);
-      const description=snippetMatch ? clean(snippetMatch[1]) : "";
-
-      seen.add(articleUrl);
-      results.push({
-        title,
-        url:articleUrl,
-        description
-      });
-    }
-
-    if(!results.length) throw new Error("No DuckDuckGo results");
-    return results;
-  }
-
-
-  async function googleSearch(){
-    const url="https://www.google.com/search?q="+encodeURIComponent(query);
-
-    const response=await fastFetch(url,{
-      headers:{
-        "User-Agent":"Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
-        "Accept-Language":"en-US,en;q=0.9"
-      }
-    });
-
-    if(!response.ok) throw new Error("Google: "+response.status);
-
-    const html=await response.text();
-    const results=[];
-    const seen=new Set();
-
-    const cleanGoogle=x=>String(x||"")
-      .replace(/<[^>]*>/g," ")
-      .replace(/&amp;/g,"&")
-      .replace(/&quot;/g,'"')
-      .replace(/&#39;/g,"'")
-      .replace(/&#x27;/g,"'")
-      .replace(/\s+/g," ")
-      .trim();
-
-    const blocks=html.split(/<div[^>]+class=["'][^"']*(?:MjjYud|tF2Cxc)[^"']*["'][^>]*>/i);
-
-    for(const block of blocks){
-      if(results.length>=10) break;
-
-      const link=block.match(/<a[^>]+href=["'](https?:\/\/[^"'#]+)["'][^>]*>([\s\S]*?)<\/a>/i);
-      if(!link) continue;
-
-      const articleUrl=link[1];
-      const title=cleanGoogle(link[2]);
-
-      if(!title || title.length<2 || seen.has(articleUrl)) continue;
-
-      seen.add(articleUrl);
-
-      results.push({
-        title,
-        url:articleUrl,
-        description:""
-      });
-    }
-
-    if(!results.length) throw new Error("No Google results");
-
-    return results;
-  }
-
-  async function bingSearch(){
-    const url="https://www.bing.com/search?q="+encodeURIComponent(query);
-    const response=await fastFetch(url,{
-      headers:{
-        "User-Agent":"Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
-        "Accept-Language":"en-US,en;q=0.9"
-      }
-    });
-
-    if(!response.ok) throw new Error("Bing: "+response.status);
-
-    const html=await response.text();
-    const results=[];
-    const seen=new Set();
-
-    const blocks=html.split(/<li[^>]+class=["'][^"']*b_algo[^"']*["'][^>]*>/i);
-
-    for(const block of blocks){
-      if(results.length>=10) break;
-
-      const link=block.match(/<h2[^>]*>\s*<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i);
-      if(!link) continue;
-
-      const articleUrl=link[1];
-      const title=clean(link[2]);
-
-      if(!/^https?:\/\//i.test(articleUrl)) continue;
-      if(!title || seen.has(articleUrl)) continue;
-
-      const paragraph=block.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
-
-      seen.add(articleUrl);
-      results.push({
-        title,
-        url:articleUrl,
-        description:paragraph ? clean(paragraph[1]) : ""
-      });
-    }
-
-    if(!results.length) throw new Error("No Bing results");
-    return results;
-  }
-
+  // LIVE SEARCH 1: DuckDuckGo
   try{
-    let results;
+    const url =
+      "https://html.duckduckgo.com/html/?q=" +
+      encodeURIComponent(query);
 
-    try{
-      results=await duckSearch();
-    }catch{
-      results=await bingSearch();
+    const response = await fastFetch(url,{
+      headers:{
+        "User-Agent":"Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
+        "Accept-Language":"en-US,en;q=0.9"
+      }
+    });
+
+    if(response.ok){
+      const html = await response.text();
+      const clean = x => String(x || "")
+        .replace(/<[^>]*>/g," ")
+        .replace(/&amp;/g,"&")
+        .replace(/&quot;/g,'"')
+        .replace(/&#39;/g,"'")
+        .replace(/&#x27;/g,"'")
+        .replace(/&nbsp;/g," ")
+        .replace(/\s+/g," ")
+        .trim();
+
+      const blocks = html.split(/result__body/i);
+      const seen = new Set();
+
+      for(const block of blocks){
+        if(results.length >= 10) break;
+
+        const link = block.match(
+          /result__a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i
+        );
+
+        if(!link) continue;
+
+        let articleUrl = link[1];
+        const title = clean(link[2]);
+
+        const uddg = articleUrl.match(/[?&]uddg=([^&]+)/i);
+
+        if(uddg){
+          try{
+            articleUrl = decodeURIComponent(uddg[1]);
+          }catch{}
+        }
+
+        if(!/^https?:\/\//i.test(articleUrl)) continue;
+        if(!title || seen.has(articleUrl)) continue;
+
+        const snippet = block.match(
+          /result__snippet[^>]*>([\s\S]*?)<\/(?:a|div)/i
+        );
+
+        seen.add(articleUrl);
+
+        results.push({
+          title,
+          url:articleUrl,
+          description:snippet ? clean(snippet[1]) : ""
+        });
+      }
     }
+  }catch(error){
+    console.error("DuckDuckGo search failed:", error.message);
+  }
 
-    const data={
-      engine:"Goobrow Fast Search",
-      query,
-      results
-    };
+  // LIVE SEARCH 2: Bing
+  if(!results.length){
+    try{
+      const url =
+        "https://www.bing.com/search?q=" +
+        encodeURIComponent(query);
 
+      const response = await fastFetch(url,{
+        headers:{
+          "User-Agent":"Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
+          "Accept-Language":"en-US,en;q=0.9"
+        }
+      });
+
+      if(response.ok){
+        const html = await response.text();
+        const clean = x => String(x || "")
+          .replace(/<[^>]*>/g," ")
+          .replace(/&amp;/g,"&")
+          .replace(/&quot;/g,'"')
+          .replace(/&#39;/g,"'")
+          .replace(/&#x27;/g,"'")
+          .replace(/\s+/g," ")
+          .trim();
+
+        const blocks = html.split(
+          /<li[^>]+class=["'][^"']*b_algo[^"']*["'][^>]*>/i
+        );
+
+        const seen = new Set();
+
+        for(const block of blocks){
+          if(results.length >= 10) break;
+
+          const link = block.match(
+            /<h2[^>]*>\s*<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i
+          );
+
+          if(!link) continue;
+
+          const articleUrl = link[1];
+          const title = clean(link[2]);
+
+          if(!/^https?:\/\//i.test(articleUrl)) continue;
+          if(!title || seen.has(articleUrl)) continue;
+
+          const paragraph = block.match(
+            /<p[^>]*>([\s\S]*?)<\/p>/i
+          );
+
+          seen.add(articleUrl);
+
+          results.push({
+            title,
+            url:articleUrl,
+            description:paragraph ? clean(paragraph[1]) : ""
+          });
+        }
+      }
+    }catch(error){
+      console.error("Bing search failed:", error.message);
+    }
+  }
+
+  // GUARANTEED LOCAL SEARCH FALLBACK
+  // data/index.json is committed to GitHub and contains 535 pages.
+  if(!results.length){
+    try{
+      results = localIndexSearch(query);
+      console.log(
+        "Goobrow local search fallback:",
+        results.length,
+        "results for:",
+        query
+      );
+    }catch(error){
+      console.error(
+        "Local index search failed:",
+        error.message
+      );
+      results = [];
+    }
+  }
+
+  const data = {
+    engine:"Goobrow Fast Search",
+    query,
+    results
+  };
+
+  if(results.length){
     fastSearchCacheSet(cacheKey,data);
     res.set("X-Goobrow-Cache","MISS");
     return res.json(data);
-
-  }catch(error){
-    console.error("Goobrow search failed:",error.message);
-
-    return res.status(200).json({
-      engine:"Goobrow Fast Search",
-      query,
-      results:[],
-      error:"Search temporarily unavailable"
-    });
   }
+
+  return res.status(200).json({
+    engine:"Goobrow Fast Search",
+    query,
+    results:[],
+    error:"No results found"
+  });
 });
 
 app.get("/api/suggestions", async (req,res)=>{
