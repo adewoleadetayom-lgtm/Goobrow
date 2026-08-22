@@ -467,8 +467,8 @@ body{
 <main class="content">
 <div id="results"></div>
 
-
-</div>
+<div id="goobrow-google-cse" style="margin:20px 0;">
+  </div>
 </main>
 
 <script>
@@ -1065,46 +1065,6 @@ if(!query){
     }).join("");
   };
 
-})();
-</script>
-
-
-<style>
-#goobrow-google-results{
-  max-width:900px;
-  margin:20px auto;
-  padding:0 12px;
-}
-#goobrow-google-results .gsc-control-cse{
-  border:0!important;
-  padding:0!important;
-  background:transparent!important;
-}
-</style>
-<script async src="https://cse.google.com/cse.js?cx=a4e70eb8b6f1c4e0e"></script>
-<div id="goobrow-google-results">
-  <div class="gcse-searchresults-only"></div>
-</div>
-<script>
-(function(){
-  const params=new URLSearchParams(location.search);
-  const q=params.get("q");
-  if(q){
-    window.addEventListener("load",function(){
-      setTimeout(function(){
-        const input=document.querySelector(
-          "#goobrow-google-results input.gsc-input"
-        );
-        const button=document.querySelector(
-          "#goobrow-google-results button.gsc-search-button"
-        );
-        if(input && button){
-          input.value=q;
-          button.click();
-        }
-      },800);
-    });
-  }
 })();
 </script>
 
