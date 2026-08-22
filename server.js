@@ -484,6 +484,23 @@ function fastSearchCacheSet(key,data){
   }
 }
 
+
+// GOOBROW FAST FETCH
+async function fastFetch(url, options = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      redirect: "follow"
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 app.get("/api/search", async (req,res)=>{
   const query=String(req.query.q||"").trim();
   if(!query) return res.json({engine:"Goobrow",query:"",results:[]});

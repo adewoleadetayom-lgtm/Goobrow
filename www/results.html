@@ -343,6 +343,92 @@ body{
  }
 }
 </style>
+
+<style id="goobrow-news-media-style">
+.goobrow-news-card{
+  display:flex;
+  gap:16px;
+  padding:16px 0;
+  border-bottom:1px solid #e5e7eb;
+  max-width:850px;
+}
+
+.goobrow-news-media{
+  width:180px;
+  min-width:180px;
+  height:110px;
+  border-radius:10px;
+  overflow:hidden;
+  background:#f1f3f4;
+}
+
+.goobrow-news-media img,
+.goobrow-news-media video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.goobrow-news-content{
+  flex:1;
+  min-width:0;
+}
+
+.goobrow-news-title{
+  font-size:19px;
+  line-height:1.35;
+  margin-bottom:7px;
+}
+
+.goobrow-news-title a{
+  color:#1a0dab;
+  text-decoration:none;
+}
+
+.goobrow-news-title a:hover{
+  text-decoration:underline;
+}
+
+.goobrow-news-source{
+  font-size:13px;
+  color:#5f6368;
+  margin-bottom:7px;
+}
+
+.goobrow-news-description{
+  font-size:14px;
+  line-height:1.5;
+  color:#4d5156;
+}
+
+.goobrow-news-date{
+  font-size:12px;
+  color:#70757a;
+  margin-top:7px;
+}
+
+@media(max-width:650px){
+  .goobrow-news-card{
+    gap:10px;
+  }
+
+  .goobrow-news-media{
+    width:115px;
+    min-width:115px;
+    height:80px;
+  }
+
+  .goobrow-news-title{
+    font-size:16px;
+  }
+
+  .goobrow-news-description{
+    font-size:13px;
+  }
+}
+</style>
+
 </head>
 
 <body>
@@ -834,5 +920,150 @@ if(!query){
 <a href="cookies.html">Cookie Policy</a> ·
 <a href="contact.html">Contact</a>
 </footer>
+
+<script id="goobrow-news-media-renderer">
+(function(){
+
+  function escapeHTML(value){
+    return String(value || "")
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;")
+      .replace(/'/g,"&#039;");
+  }
+
+  function newsMedia(item){
+
+    const image =
+      item.image ||
+      item.thumbnail ||
+      item.imageUrl ||
+      "";
+
+    const video =
+      item.video ||
+      item.videoUrl ||
+      item.video_url ||
+      "";
+
+    if(video){
+      return `
+        <video
+          src="${escapeHTML(video)}"
+          controls
+          muted
+          playsinline
+          preload="metadata">
+        </video>
+      `;
+    }
+
+    if(image){
+      return `
+        <img
+          src="${escapeHTML(image)}"
+          loading="lazy"
+          onerror="this.parentElement.innerHTML='<span style=&quot;display:flex;height:100%;align-items:center;justify-content:center;font-size:32px&quot;>📰</span>'"
+          alt="">
+      `;
+    }
+
+    return `
+      <span style="
+        display:flex;
+        height:100%;
+        align-items:center;
+        justify-content:center;
+        font-size:36px;">
+        📰
+      </span>
+    `;
+  }
+
+  window.goobrowRenderNews = function(results, container){
+
+    if(!container) return;
+
+    if(!Array.isArray(results) || !results.length){
+      container.innerHTML =
+        '<p>No news results found.</p>';
+      return;
+    }
+
+    container.innerHTML = results.map(item => {
+
+      const title =
+        item.title ||
+        "Untitled news";
+
+      const url =
+        item.url ||
+        item.link ||
+        "#";
+
+      const description =
+        item.description ||
+        item.snippet ||
+        "";
+
+      const source =
+        item.source ||
+        item.publisher ||
+        "News";
+
+      const date =
+        item.publishedAt ||
+        item.date ||
+        "";
+
+      return `
+        <article class="goobrow-news-card">
+
+          <div class="goobrow-news-media">
+            ${newsMedia(item)}
+          </div>
+
+          <div class="goobrow-news-content">
+
+            <div class="goobrow-news-title">
+              <a
+                href="${escapeHTML(url)}"
+                target="_blank"
+                rel="noopener noreferrer">
+                ${escapeHTML(title)}
+              </a>
+            </div>
+
+            <div class="goobrow-news-source">
+              ${escapeHTML(source)}
+            </div>
+
+            <div class="goobrow-news-description">
+              ${escapeHTML(
+                String(description)
+                  .replace(/<[^>]*>/g," ")
+              )}
+            </div>
+
+            ${
+              date
+              ? `<div class="goobrow-news-date">
+                   ${escapeHTML(date)}
+                 </div>`
+              : ""
+            }
+
+          </div>
+
+        </article>
+      `;
+
+    }).join("");
+  };
+
+})();
+</script>
+
 </body>
 </html>
