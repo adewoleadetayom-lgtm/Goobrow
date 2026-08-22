@@ -583,193 +583,318 @@ function localIndexSearch(query) {
 }
 
 app.get("/api/search", async (req,res)=>{
-  const query = String(req.query.q || "").trim();
+  const originalQuery = String(req.query.q || "").trim();
 
-  if(!query){
+  if(!originalQuery){
     return res.json({
-      engine:"Goobrow Fast Search",
+      engine:"Goobrow Search",
       query:"",
       results:[]
     });
   }
 
-  const cacheKey = query.toLowerCase();
-  const cached = fastSearchCacheGet(cacheKey);
+  /*
+   * GOOBROW SMART QUERY CLEANING
+   * Turns questions such as:
+   * "What is a noun?"
+   * into useful search terms:
+   * "noun"
+   */
+  const stopWords = new Set([
+    "what","is","are","was","were","the","a","an",
+    "of","to","in","on","for","and","or","how",
+    "why","when","where","who","which","can",
+    "does","do","did","please","tell","me","about"
+  ]);
 
-  if(cached && Array.isArray(cached.results) && cached.results.length){
-    res.set("X-Goobrow-Cache","HIT");
-    return res.json(cached);
-  }
+  const words = originalQuery
+    .toLowerCase()
+    .replace(/[^\w\s]/g," ")
+    .split(/\s+/)
+    .filter(Boolean);
+
+  const importantWords = words.filter(w =>
+    w.length > 1 && !stopWords.has(w)
+  );
+
+  const searchQuery =
+    importantWords.length
+      ? importantWords.join(" ")
+      : originalQuery;
+
+  const cacheKey = originalQuery.toLowerCase();
+
+  try{
+    const cached = fastSearchCacheGet(cacheKey);
+    if(cached){
+      res.set("X-Goobrow-Cache","HIT");
+      return res.json(cached);
+    }
+  }catch{}
+
+  const clean = x => String(x || "")
+    .replace(/<[^>]*>/g," ")
+    .replace(/&amp;/g,"&")
+    .replace(/&quot;/g,'"')
+    .replace(/&#39;/g,"'")
+    .replace(/&#x27;/g,"'")
+    .replace(/&nbsp;/g," ")
+    .replace(/\s+/g," ")
+    .trim();
 
   let results = [];
 
-  // LIVE SEARCH 1: DuckDuckGo
+  /*
+   * 1. DuckDuckGo
+   */
   try{
     const url =
       "https://html.duckduckgo.com/html/?q=" +
-      encodeURIComponent(query);
+      encodeURIComponent(originalQuery);
 
-    const response = await fastFetch(url,{
+    const r = await fetch(url,{
       headers:{
-        "User-Agent":"Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
+        "User-Agent":
+          "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
         "Accept-Language":"en-US,en;q=0.9"
       }
     });
 
-    if(response.ok){
-      const html = await response.text();
-      const clean = x => String(x || "")
-        .replace(/<[^>]*>/g," ")
-        .replace(/&amp;/g,"&")
-        .replace(/&quot;/g,'"')
-        .replace(/&#39;/g,"'")
-        .replace(/&#x27;/g,"'")
-        .replace(/&nbsp;/g," ")
-        .replace(/\s+/g," ")
-        .trim();
-
+    if(r.ok){
+      const html = await r.text();
       const blocks = html.split(/result__body/i);
       const seen = new Set();
 
       for(const block of blocks){
         if(results.length >= 10) break;
 
-        const link = block.match(
+        const m = block.match(
           /result__a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i
         );
 
-        if(!link) continue;
+        if(!m) continue;
 
-        let articleUrl = link[1];
-        const title = clean(link[2]);
+        let url = m[1];
+        const title = clean(m[2]);
 
-        const uddg = articleUrl.match(/[?&]uddg=([^&]+)/i);
+        const uddg = url.match(/[?&]uddg=([^&]+)/i);
 
         if(uddg){
           try{
-            articleUrl = decodeURIComponent(uddg[1]);
+            url = decodeURIComponent(uddg[1]);
           }catch{}
         }
 
-        if(!/^https?:\/\//i.test(articleUrl)) continue;
-        if(!title || seen.has(articleUrl)) continue;
+        if(!/^https?:\/\//i.test(url)) continue;
+        if(!title || seen.has(url)) continue;
 
-        const snippet = block.match(
+        const sm = block.match(
           /result__snippet[^>]*>([\s\S]*?)<\/(?:a|div)/i
         );
 
-        seen.add(articleUrl);
+        seen.add(url);
 
         results.push({
           title,
-          url:articleUrl,
-          description:snippet ? clean(snippet[1]) : ""
+          url,
+          description: sm ? clean(sm[1]) : ""
         });
       }
     }
   }catch(error){
-    console.error("DuckDuckGo search failed:", error.message);
+    console.error("DuckDuckGo unavailable:",error.message);
   }
 
-  // LIVE SEARCH 2: Bing
+  /*
+   * 2. Bing
+   */
   if(!results.length){
     try{
       const url =
         "https://www.bing.com/search?q=" +
-        encodeURIComponent(query);
+        encodeURIComponent(originalQuery);
 
-      const response = await fastFetch(url,{
+      const r = await fetch(url,{
         headers:{
-          "User-Agent":"Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
+          "User-Agent":
+            "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
           "Accept-Language":"en-US,en;q=0.9"
         }
       });
 
-      if(response.ok){
-        const html = await response.text();
-        const clean = x => String(x || "")
-          .replace(/<[^>]*>/g," ")
-          .replace(/&amp;/g,"&")
-          .replace(/&quot;/g,'"')
-          .replace(/&#39;/g,"'")
-          .replace(/&#x27;/g,"'")
-          .replace(/\s+/g," ")
-          .trim();
-
-        const blocks = html.split(
-          /<li[^>]+class=["'][^"']*b_algo[^"']*["'][^>]*>/i
-        );
+      if(r.ok){
+        const html = await r.text();
+        const blocks =
+          html.split(
+            /<li[^>]+class=["'][^"']*b_algo[^"']*["'][^>]*>/i
+          );
 
         const seen = new Set();
 
         for(const block of blocks){
           if(results.length >= 10) break;
 
-          const link = block.match(
+          const m = block.match(
             /<h2[^>]*>\s*<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i
           );
 
-          if(!link) continue;
+          if(!m) continue;
 
-          const articleUrl = link[1];
-          const title = clean(link[2]);
+          const url = m[1];
+          const title = clean(m[2]);
 
-          if(!/^https?:\/\//i.test(articleUrl)) continue;
-          if(!title || seen.has(articleUrl)) continue;
+          if(!/^https?:\/\//i.test(url)) continue;
+          if(!title || seen.has(url)) continue;
 
-          const paragraph = block.match(
-            /<p[^>]*>([\s\S]*?)<\/p>/i
-          );
+          const sm =
+            block.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
 
-          seen.add(articleUrl);
+          seen.add(url);
 
           results.push({
             title,
-            url:articleUrl,
-            description:paragraph ? clean(paragraph[1]) : ""
+            url,
+            description: sm ? clean(sm[1]) : ""
           });
         }
       }
     }catch(error){
-      console.error("Bing search failed:", error.message);
+      console.error("Bing unavailable:",error.message);
     }
   }
 
-  // GUARANTEED LOCAL SEARCH FALLBACK
-  // data/index.json is committed to GitHub and contains 535 pages.
+  /*
+   * 3. Wikipedia SMART SEARCH
+   *
+   * Uses the important words rather than unnecessary
+   * question words.
+   */
   if(!results.length){
     try{
-      results = localIndexSearch(query);
-      console.log(
-        "Goobrow local search fallback:",
-        results.length,
-        "results for:",
-        query
-      );
+      const url =
+        "https://en.wikipedia.org/w/api.php" +
+        "?action=query" +
+        "&list=search" +
+        "&format=json" +
+        "&utf8=1" +
+        "&origin=*" +
+        "&srlimit=10" +
+        "&srsearch=" +
+        encodeURIComponent(searchQuery);
+
+      const r = await fetch(url,{
+        headers:{
+          "User-Agent":"Goobrow/1.0 Search Engine"
+        }
+      });
+
+      if(r.ok){
+        const data = await r.json();
+
+        if(
+          data.query &&
+          Array.isArray(data.query.search)
+        ){
+          results = data.query.search.map(item => ({
+            title:item.title,
+            url:
+              "https://en.wikipedia.org/wiki/" +
+              encodeURIComponent(
+                item.title.replace(/ /g,"_")
+              ),
+            description:clean(item.snippet)
+          }));
+        }
+      }
     }catch(error){
       console.error(
-        "Local index search failed:",
+        "Wikipedia unavailable:",
         error.message
       );
-      results = [];
     }
+  }
+
+  /*
+   * 4. LOCAL GOOBROW INDEX
+   */
+  if(!results.length){
+    try{
+      results = localIndexSearch(searchQuery);
+    }catch(error){
+      console.error(
+        "Local search unavailable:",
+        error.message
+      );
+    }
+  }
+
+  /*
+   * 5. SMART RESULT RANKING
+   */
+  if(results.length){
+    const ranked = results.map(item => {
+
+      const title = String(item.title || "").toLowerCase();
+      const description =
+        String(item.description || "").toLowerCase();
+
+      let score = 0;
+
+      for(const word of importantWords){
+
+        if(title === word)
+          score += 100;
+
+        if(title.includes(word))
+          score += 40;
+
+        if(description.includes(word))
+          score += 10;
+      }
+
+      /*
+       * Exact multi-word phrase gets extra priority.
+       */
+      const phrase = importantWords.join(" ");
+
+      if(
+        phrase.length > 2 &&
+        title.includes(phrase)
+      ){
+        score += 100;
+      }
+
+      return {
+        ...item,
+        _score:score
+      };
+    });
+
+    ranked.sort((a,b) => b._score - a._score);
+
+    results = ranked
+      .slice(0,10)
+      .map(({_score,...item}) => item);
   }
 
   const data = {
-    engine:"Goobrow Fast Search",
-    query,
+    engine:"Goobrow Search",
+    query:originalQuery,
     results
   };
 
   if(results.length){
-    fastSearchCacheSet(cacheKey,data);
+    try{
+      fastSearchCacheSet(cacheKey,data);
+    }catch{}
+
     res.set("X-Goobrow-Cache","MISS");
     return res.json(data);
   }
 
   return res.status(200).json({
-    engine:"Goobrow Fast Search",
-    query,
+    engine:"Goobrow Search",
+    query:originalQuery,
     results:[],
     error:"No results found"
   });
