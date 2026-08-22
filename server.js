@@ -501,6 +501,64 @@ async function fastFetch(url, options = {}) {
   }
 }
 
+
+// GOOBROW LOCAL INDEX FALLBACK
+let goobrowLocalIndex = [];
+
+try {
+  const fs = require("fs");
+  const indexPath = path.join(__dirname, "data", "index.json");
+
+  if (fs.existsSync(indexPath)) {
+    goobrowLocalIndex = JSON.parse(fs.readFileSync(indexPath, "utf8"));
+    console.log("Goobrow local index loaded:", goobrowLocalIndex.length, "pages");
+  }
+} catch (error) {
+  console.error("Goobrow local index failed:", error.message);
+}
+
+function localIndexSearch(query) {
+  const words = String(query || "")
+    .toLowerCase()
+    .split(/\s+/)
+    .map(x => x.replace(/[^a-z0-9]+/g, ""))
+    .filter(x => x.length >= 2);
+
+  if (!words.length || !Array.isArray(goobrowLocalIndex)) return [];
+
+  const scored = [];
+
+  for (const page of goobrowLocalIndex) {
+    const title = String(page.title || "");
+    const text = String(page.text || "");
+    const haystack = (title + " " + text).toLowerCase();
+
+    let score = 0;
+
+    for (const word of words) {
+      if (title.toLowerCase().includes(word)) score += 10;
+      if (haystack.includes(word)) score += 2;
+    }
+
+    if (score > 0) {
+      scored.push({
+        score,
+        result: {
+          title: title || page.url,
+          url: page.url,
+          description: text.slice(0, 300)
+        }
+      });
+    }
+  }
+
+  scored.sort((a,b) => b.score - a.score);
+
+  return scored
+    .slice(0, 10)
+    .map(x => x.result);
+}
+
 app.get("/api/search", async (req,res)=>{
   const query=String(req.query.q||"").trim();
   if(!query) return res.json({engine:"Goobrow",query:"",results:[]});
