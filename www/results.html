@@ -461,6 +461,7 @@ body{
 <a class="tab" data-mode="videos">Videos</a>
 <a class="tab" data-mode="news">News</a>
 <a class="tab" data-mode="ai">AI Mode</a>
+<a class="tab" data-mode="academic">Academics</a>
 
 </nav>
 
@@ -896,6 +897,40 @@ if(!query){
 }else if(mode==="news"){
 
  loadNews();
+
+}
+else if(mode==='academic'){
+  results.innerHTML='<p>🎓 Loading academic results...</p>';
+
+  fetch('/api/academic?q='+encodeURIComponent(q))
+    .then(r=>r.json())
+    .then(d=>{
+      let html='';
+
+      html += '<div style="padding:12px 0;">';
+      html += '<h2 style="margin:0 0 10px;">🎓 '+(d.subject||'Academics')+'</h2>';
+
+      if(d.answer){
+        html += '<div style="padding:14px;border-radius:12px;background:#f5f7fb;margin-bottom:16px;font-weight:500;">'+d.answer+'</div>';
+      }
+
+      if(d.results && d.results.length){
+        d.results.forEach(function(x){
+          html += '<article class="result">';
+          html += '<a href="'+x.url+'" target="_blank" rel="noopener">';
+          html += '<h3>'+x.title+'</h3>';
+          html += '</a>';
+          html += '<p>'+(x.description||'')+'</p>';
+          html += '</article>';
+        });
+      }
+
+      html += '</div>';
+      results.innerHTML=html;
+    })
+    .catch(function(){
+      results.innerHTML='<p>Academic search is temporarily unavailable.</p>';
+    });
 
 }else if(mode==="ai"){
 

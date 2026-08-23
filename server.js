@@ -1547,6 +1547,108 @@ app.get("/results.html", (req, res) => {
   res.sendFile(path.join(__dirname, "www", "results.html"));
 });
 
+
+/* =====================================================
+   GOOBROW ACADEMIC SEARCH
+   ===================================================== */
+
+function goobrowAcademicSubject(q){
+  const x=String(q||'').toLowerCase();
+
+  if(/\b(biology|cell|dna|rna|gene|photosynthesis|respiration|ecosystem|organism|anatomy|physiology|mitosis|meiosis|genetics)\b/.test(x)) return 'Biology';
+  if(/\b(chemistry|chemical|atom|molecule|element|periodic|acid|base|salt|reaction|equation|compound|oxidation)\b/.test(x)) return 'Chemistry';
+  if(/\b(physics|force|motion|velocity|acceleration|energy|power|work|momentum|electricity|voltage|current|wave|light|pressure|density|gravity)\b/.test(x)) return 'Physics';
+  if(/\b(math|mathematics|calculate|calculation|equation|algebra|geometry|fraction|percentage|ratio|probability|statistics|trigonometry|quadratic|factorial|integral|derivative)\b/.test(x)) return 'Mathematics';
+  if(/\b(english|grammar|noun|pronoun|verb|adjective|adverb|tense|sentence|literature|comprehension|synonym|antonym|punctuation|vocabulary)\b/.test(x)) return 'English';
+  if(/\b(geography|climate|weather|map|population|continent|earthquake|volcano|river|soil|latitude|longitude)\b/.test(x)) return 'Geography';
+  if(/\b(history|historical|war|colonial|independence|civilization|government|civics|democracy|constitution)\b/.test(x)) return 'History/Civic';
+  if(/\b(computer|programming|coding|algorithm|software|hardware|database|internet|javascript|python|html|css)\b/.test(x)) return 'Computer Science';
+
+  return 'General Academics';
+}
+
+function goobrowSafeCalculate(expr){
+  let x=String(expr||'')
+    .replace(/,/g,'')
+    .replace(/[×x]/g,'*')
+    .replace(/÷/g,'/')
+    .replace(/\^/g,'**')
+    .trim();
+
+  if(!x || x.length>100) return null;
+  if(!/^[0-9+*/().%\s-]+$/.test(x)) return null;
+  if(x.includes('**')) return null;
+
+  try{
+    const result=Function('"use strict"; return ('+x+')')();
+    if(typeof result!=='number' || !Number.isFinite(result)) return null;
+    return Number.isInteger(result) ? String(result) : String(Number(result.toFixed(10)));
+  }catch{
+    return null;
+  }
+}
+
+app.get('/api/academic', async (req,res)=>{
+  const query=String(req.query.q||'').trim();
+
+  if(!query){
+    return res.json({
+      subject:'General Academics',
+      type:'academic',
+      answer:'Please enter an academic question.',
+      results:[]
+    });
+  }
+
+  const subject=goobrowAcademicSubject(query);
+  const calculation=goobrowSafeCalculate(query);
+
+  if(calculation!==null){
+    return res.json({
+      subject:'Mathematics',
+      type:'calculation',
+      answer:query+' = '+calculation,
+      results:[]
+    });
+  }
+
+  let results=[];
+
+  try{
+    const url='https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&origin=*&srlimit=8&srsearch='+encodeURIComponent(query);
+    const response=await fetch(url,{
+      headers:{'User-Agent':'GoobrowAcademic/1.0'}
+    });
+
+    if(response.ok){
+      const data=await response.json();
+
+      for(const item of (data.query?.search||[])){
+        const title=item.title||'';
+        const description=String(item.snippet||'')
+          .replace(/<[^>]*>/g,'')
+          .replace(/&quot;/g,'"')
+          .replace(/&#39;/g,"'")
+          .replace(/&amp;/g,'&');
+
+        results.push({
+          title:title,
+          url:'https://en.wikipedia.org/wiki/'+encodeURIComponent(title.replace(/ /g,'_')),
+          description:description
+        });
+      }
+    }
+  }catch(error){
+    console.error('Academic search:',error.message);
+  }
+
+  res.json({
+    subject:subject,
+    type:'academic',
+    answer:results.length ? 'Academic results for: '+query : 'No academic results were found. Try rephrasing your question.',
+    results:results
+  });
+});
 app.listen(PORT, () => {
   console.log(`Goobrow search server running at http://localhost:${PORT}`);
 });
