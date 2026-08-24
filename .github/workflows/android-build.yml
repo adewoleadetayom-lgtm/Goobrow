@@ -1,10 +1,13 @@
-name: Goobrow Android Diagnostic Build
+name: Goobrow Android APK
 
 on:
   push:
     branches:
       - main
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build-android:
@@ -14,82 +17,41 @@ jobs:
       - name: Checkout Goobrow
         uses: actions/checkout@v5
 
-      - name: Set up Java 21
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Setup Java 21
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
           cache: gradle
 
-      - name: Check Java and Gradle
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Verify native browser
+        run: |
+          set -e
+          test -f android/app/src/main/java/com/goobrow/browser/MainActivity.java
+          test -f android/app/src/main/java/com/goobrow/browser/GoobrowBrowserPlugin.java
+          test -f android/app/src/main/java/com/goobrow/browser/GoobrowBrowserActivity.java
+          grep -q "GoobrowBrowserPlugin" android/app/src/main/java/com/goobrow/browser/MainActivity.java
+          grep -q "GoobrowBrowserActivity" android/app/src/main/AndroidManifest.xml
+          grep -q "WebView" android/app/src/main/java/com/goobrow/browser/GoobrowBrowserActivity.java
+          echo "Native browser verification: OK"
+
+      - name: Build APK
         working-directory: android
         run: |
           chmod +x gradlew
-          echo "===== JAVA ====="
-          java -version
-          echo
-          echo "===== GRADLE ====="
-          ./gradlew --version
-
-      - name: Build Debug APK with full diagnostic log
-        id: build
-        working-directory: android
-        shell: bash
-        run: |
-          set +e
-
-          echo "=================================================="
-          echo "GOOBROW GRADLE DIAGNOSTIC BUILD"
-          echo "=================================================="
-
-          ./gradlew assembleDebug \
-            --no-daemon \
-            --stacktrace \
-            --info \
-            2>&1 | tee ../gradle-build.log
-
-          BUILD_STATUS=${PIPESTATUS[0]}
-
-          echo
-          echo "=================================================="
-          echo "GRADLE EXIT CODE: $BUILD_STATUS"
-          echo "=================================================="
-
-          echo
-          echo "===== LAST 200 LINES OF GRADLE LOG ====="
-          tail -n 200 ../gradle-build.log
-
-          exit $BUILD_STATUS
-
-      - name: Show diagnostic summary
-        if: always()
-        working-directory: android
-        run: |
-          echo "=================================================="
-          echo "GOOBROW DIAGNOSTIC SUMMARY"
-          echo "=================================================="
-
-          if [ -f ../gradle-build.log ]; then
-            echo
-            echo "===== FAILURE / ERROR LINES ====="
-            grep -n -E \
-              "FAILURE:|What went wrong:|Caused by:|error:|Error:|Could not|Unable to|Exception" \
-              ../gradle-build.log | tail -n 100 || true
-
-            echo
-            echo "===== LAST 200 LINES ====="
-            tail -n 200 ../gradle-build.log
-          else
-            echo "gradle-build.log was not created."
-          fi
-
-      - name: Upload complete Gradle diagnostic log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Goobrow-Gradle-Diagnostic-Log
-          path: gradle-build.log
-          if-no-files-found: warn
+          ./gradlew assembleDebug --no-daemon --stacktrace --console=plain
 
       - name: Upload APK
         if: success()
