@@ -5,9 +5,9 @@ import android.os.Bundle;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.KeyEvent;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.WebChromeClient;
@@ -31,7 +31,7 @@ public class GoobrowBrowserActivity extends Activity {
         return (int)(value * getResources().getDisplayMetrics().density + 0.5f);
     }
 
-    private GradientDrawable background(int color, int radius) {
+    private GradientDrawable rounded(int color, int radius) {
         GradientDrawable g = new GradientDrawable();
         g.setColor(color);
         g.setCornerRadius(dp(radius));
@@ -49,41 +49,52 @@ public class GoobrowBrowserActivity extends Activity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.WHITE);
 
+        /* ===== MODERN GOOGLE-STYLE TOOLBAR ===== */
+
         LinearLayout toolbar = new LinearLayout(this);
         toolbar.setOrientation(LinearLayout.HORIZONTAL);
         toolbar.setGravity(Gravity.CENTER_VERTICAL);
         toolbar.setPadding(dp(6), dp(6), dp(6), dp(6));
         toolbar.setBackgroundColor(Color.WHITE);
 
-        Button back = button("‹");
-        Button forward = button("›");
-        Button reload = button("↻");
-        Button home = button("⌂");
+        Button back = tool("‹");
+        Button forward = tool("›");
 
         addressBar = new EditText(this);
         addressBar.setSingleLine(true);
         addressBar.setTextSize(15);
-        addressBar.setHint("Search Google or enter website");
-        addressBar.setPadding(dp(15), 0, dp(10), 0);
-        addressBar.setBackground(background(Color.rgb(245,247,249), 25));
+        addressBar.setHint("Search Google or enter address");
+        addressBar.setTextColor(Color.rgb(32,33,36));
+        addressBar.setHintTextColor(Color.rgb(95,99,104));
+        addressBar.setPadding(dp(16), 0, dp(16), 0);
+        addressBar.setBackground(rounded(Color.rgb(241,243,244), 24));
 
         LinearLayout.LayoutParams addressParams =
-                new LinearLayout.LayoutParams(0, dp(46), 1);
+                new LinearLayout.LayoutParams(0, dp(44), 1);
+
+        Button reload = tool("↻");
+        Button menu = tool("⋮");
 
         toolbar.addView(back);
         toolbar.addView(forward);
         toolbar.addView(addressBar, addressParams);
         toolbar.addView(reload);
-        toolbar.addView(home);
+        toolbar.addView(menu);
 
         root.addView(toolbar);
 
+        /* ===== WEBVIEW ===== */
+
         webView = new WebView(this);
-        root.addView(webView,
+
+        root.addView(
+                webView,
                 new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         0,
-                        1));
+                        1
+                )
+        );
 
         setContentView(root);
 
@@ -92,19 +103,19 @@ public class GoobrowBrowserActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
+        settings.setJavaScriptCanOpenWindowsAutomatically(true);
+        settings.setSupportMultipleWindows(true);
+        settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         settings.setSupportZoom(true);
-        settings.setLoadWithOverviewMode(false);
-        settings.setUseWideViewPort(false);
-        settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
-        settings.setJavaScriptCanOpenWindowsAutomatically(true);
-        settings.setSupportMultipleWindows(true);
+        settings.setLoadsImagesAutomatically(true);
 
         CookieManager.getInstance().setAcceptCookie(true);
-        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
+        CookieManager.getInstance()
+                .setAcceptThirdPartyCookies(webView, true);
 
         webView.setWebChromeClient(new WebChromeClient());
 
@@ -114,7 +125,6 @@ public class GoobrowBrowserActivity extends Activity {
             public boolean shouldOverrideUrlLoading(
                     WebView view,
                     WebResourceRequest request) {
-
                 return false;
             }
 
@@ -137,13 +147,17 @@ public class GoobrowBrowserActivity extends Activity {
                     long contentLength) {
 
                 try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setData(Uri.parse(url));
+                    Intent intent = new Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse(url)
+                    );
                     startActivity(intent);
                 } catch (Exception ignored) {
                 }
             }
         });
+
+        /* ===== ADDRESS BAR ===== */
 
         addressBar.setOnEditorActionListener((v, actionId, event) -> {
             navigate();
@@ -151,21 +165,28 @@ public class GoobrowBrowserActivity extends Activity {
         });
 
         addressBar.setOnKeyListener((v, keyCode, event) -> {
+
             if (keyCode == KeyEvent.KEYCODE_ENTER &&
                     event.getAction() == KeyEvent.ACTION_DOWN) {
+
                 navigate();
                 return true;
             }
+
             return false;
         });
 
+        /* ===== NAVIGATION ===== */
+
         back.setOnClickListener(v -> {
+
             if (webView.canGoBack()) {
                 webView.goBack();
             }
         });
 
         forward.setOnClickListener(v -> {
+
             if (webView.canGoForward()) {
                 webView.goForward();
             }
@@ -173,36 +194,105 @@ public class GoobrowBrowserActivity extends Activity {
 
         reload.setOnClickListener(v -> webView.reload());
 
-        home.setOnClickListener(v -> finish());
+        menu.setOnClickListener(v -> {
 
-        String startUrl = getIntent().getStringExtra("url");
+            String[] items = {
+                    "Google Home",
+                    "Google News",
+                    "Google Images",
+                    "Google Videos",
+                    "Google Maps",
+                    "Bookmarks"
+            };
 
-        if (startUrl == null || startUrl.trim().isEmpty()) {
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle("Goobrow")
+                    .setItems(items, (dialog, which) -> {
+
+                        switch (which) {
+
+                            case 0:
+                                webView.loadUrl(
+                                        "https://www.google.com/"
+                                );
+                                break;
+
+                            case 1:
+                                webView.loadUrl(
+                                        "https://news.google.com/"
+                                );
+                                break;
+
+                            case 2:
+                                webView.loadUrl(
+                                        "https://images.google.com/"
+                                );
+                                break;
+
+                            case 3:
+                                webView.loadUrl(
+                                        "https://www.google.com/search?tbm=vid"
+                                );
+                                break;
+
+                            case 4:
+                                webView.loadUrl(
+                                        "https://maps.google.com/"
+                                );
+                                break;
+
+                            case 5:
+                                showBookmarks();
+                                break;
+                        }
+                    })
+                    .show();
+        });
+
+        /* ===== INITIAL PAGE ===== */
+
+        String startUrl =
+                getIntent().getStringExtra("url");
+
+        if (startUrl == null ||
+                startUrl.trim().isEmpty()) {
+
             startUrl = "https://www.google.com/";
         }
 
         webView.loadUrl(startUrl);
     }
 
-    private Button button(String text) {
+    private Button tool(String text) {
+
         Button b = new Button(this);
+
         b.setText(text);
-        b.setTextSize(22);
-        b.setTextColor(Color.DKGRAY);
+        b.setTextSize(21);
+        b.setTextColor(Color.rgb(60,64,67));
         b.setBackgroundColor(Color.TRANSPARENT);
+
         b.setMinWidth(0);
         b.setMinimumWidth(0);
-        b.setPadding(dp(5), 0, dp(5), 0);
+
+        b.setPadding(0, 0, 0, 0);
 
         b.setLayoutParams(
-                new LinearLayout.LayoutParams(dp(43), dp(46)));
+                new LinearLayout.LayoutParams(
+                        dp(42),
+                        dp(44)
+                )
+        );
 
         return b;
     }
 
     private void navigate() {
 
-        String value = addressBar.getText().toString().trim();
+        String value =
+                addressBar.getText()
+                        .toString()
+                        .trim();
 
         if (value.isEmpty()) {
             return;
@@ -211,10 +301,19 @@ public class GoobrowBrowserActivity extends Activity {
         String target;
 
         if (value.matches("(?i)^https?://.*")) {
+
             target = value;
-        } else if (value.matches("^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}(/.*)?$")) {
+
+        } else if (
+                value.matches(
+                        "^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}(/.*)?$"
+                )
+        ) {
+
             target = "https://" + value;
+
         } else {
+
             target =
                     "https://www.google.com/search?q=" +
                     Uri.encode(value);
@@ -223,23 +322,46 @@ public class GoobrowBrowserActivity extends Activity {
         webView.loadUrl(target);
     }
 
-    @Override
-    public void onBackPressed() {
+    private void showBookmarks() {
 
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
+        android.content.SharedPreferences prefs =
+                getSharedPreferences(
+                        "goobrow",
+                        MODE_PRIVATE
+                );
+
+        String bookmarks =
+                prefs.getString("bookmarks", "");
+
+        if (bookmarks.isEmpty()) {
+
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle("Bookmarks")
+                    .setMessage("No bookmarks saved yet.")
+                    .setPositiveButton("OK", null)
+                    .show();
+
+            return;
         }
+
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Bookmarks")
+                .setMessage(bookmarks)
+                .setPositiveButton("OK", null)
+                .show();
     }
 
     @Override
-    protected void onDestroy() {
-        if (webView != null) {
-            webView.stopLoading();
-            webView.destroy();
-        }
+    public void onBackPressed() {
 
-        super.onDestroy();
+        if (webView != null &&
+                webView.canGoBack()) {
+
+            webView.goBack();
+
+        } else {
+
+            super.onBackPressed();
+        }
     }
 }
