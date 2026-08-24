@@ -648,91 +648,9 @@ body{
 
 </style>
 
-
-<style id="goobrow-native-download-status">
-.goobrow-native-download-badge{
-  display:inline-block;
-  margin-left:6px;
-  padding:3px 7px;
-  border-radius:8px;
-  font-size:11px;
-  font-weight:700;
-  background:#eef6ff;
-}
-</style>
-
-<script id="goobrow-native-download-status-script">
-/* GOOBROW NATIVE DOWNLOAD STATUS */
-
-(function(){
-
-  function detectNativeDownloads(){
-
-    const native=
-      !!(
-        window.Capacitor &&
-        window.Capacitor.Plugins &&
-        window.Capacitor.Plugins.Filesystem
-      );
-
-    window.goobrowNativeDownloadsAvailable=native;
-
-    console.log(
-      "Goobrow native downloads:",
-      native ? "AVAILABLE" : "BROWSER FALLBACK"
-    );
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener(
-      "DOMContentLoaded",
-      detectNativeDownloads
-    );
-  }else{
-    detectNativeDownloads();
-  }
-
-})();
-
-/* END GOOBROW NATIVE DOWNLOAD STATUS */
-</script>
-
-
-<style id="goobrow-results-dark-mode">
-html.goobrow-dark body{
-  background:#202124!important;
-  color:#f1f3f4!important;
-}
-html.goobrow-dark .header,
-html.goobrow-dark .content,
-html.goobrow-dark .result,
-html.goobrow-dark .search{
-  background:#292a2d!important;
-  color:#f1f3f4!important;
-  border-color:#5f6368!important;
-}
-html.goobrow-dark input{
-  background:#303134!important;
-  color:#f1f3f4!important;
-}
-.goobrow-results-tools{
-  position:fixed;
-  top:10px;
-  right:10px;
-  z-index:9999;
-}
-.goobrow-tool-btn{
-  border:1px solid #dadce0;
-  background:#fff;
-  color:#202124;
-  border-radius:20px;
-  padding:8px 12px;
-}
-</style>
-
 </head>
 
-<body><div class="goobrow-results-tools"><button class="goobrow-tool-btn" id="goobrowResultsDarkBtn" type="button">🌙 Dark</button></div>
+<body>
 
 <header class="header">
 
@@ -767,17 +685,6 @@ html.goobrow-dark input{
 </nav>
 
 <main class="content">
-
-<div style="margin:15px 0;">
-<a href="https://www.google.com/search?q=" id="goobrowGoogleSearchLink"
-   id="goobrowGoogleSearchLink"
-   target="_blank"
-   rel="noopener"
-   style="display:inline-block;padding:10px 15px;border-radius:20px;text-decoration:none;border:1px solid #dadce0;">
-   🔎 Search this on Google
-</a>
-</div>
-
 <div id="results"></div>
 
 <div id="goobrow-google-cse" style="margin:20px 0;">
@@ -828,8 +735,9 @@ document
  if(q){
 
   location.href=
-   "https://www.google.com/search?q="+
-   encodeURIComponent(q);
+   "results.html?q="+
+   encodeURIComponent(q)+
+   "&mode=all";
 
  }
 
@@ -1775,30 +1683,41 @@ async function goobrowStartDownload(url,name){
   url=String(url||"").trim();
 
   if(!url){
+
     alert("No downloadable media URL was provided.");
+
     return;
   }
 
   let check;
 
   try{
+
     const response=await fetch(
       "/api/download-check?url="+encodeURIComponent(url)
     );
+
     check=await response.json();
+
   }catch(error){
+
     alert("Goobrow could not check this download.");
+
     return;
   }
 
   if(!check.downloadable){
 
     if(check.platform==="youtube"){
+
       alert(
-        "This is a YouTube video. Goobrow does not bypass YouTube download restrictions. Please use YouTube's supported download options."
+        "This is a YouTube video. Goobrow will not bypass YouTube's download restrictions. Please open the video on YouTube and use its supported options."
       );
+
     }else{
+
       alert(check.message||"This file cannot be downloaded by Goobrow.");
+
     }
 
     return;
@@ -1812,133 +1731,17 @@ async function goobrowStartDownload(url,name){
     name:name||"Goobrow download",
     url:url,
     status:"Starting...",
-    progress:0,
-    native:false,
-    filePath:""
+    progress:0
   };
 
   goobrowDownloads.unshift(item);
+
   goobrowDownloadManager();
+
   goobrowRenderDownloads();
 
   try{
 
-    /*
-     * Native Capacitor Android path.
-     * The Capacitor bridge is available inside the Android app.
-     */
-    const CapacitorBridge=
-      window.Capacitor &&
-      window.Capacitor.Plugins &&
-      window.Capacitor.Plugins.Filesystem;
-
-    if(CapacitorBridge){
-
-      item.native=true;
-      item.status="Connecting...";
-      goobrowRenderDownloads();
-
-      const response=await fetch(url);
-
-      if(!response.ok){
-        throw new Error("HTTP "+response.status);
-      }
-
-      const total=Number(
-        response.headers.get("content-length")||0
-      );
-
-      if(!response.body){
-        throw new Error("Streaming unavailable.");
-      }
-
-      const reader=response.body.getReader();
-      const chunks=[];
-      let received=0;
-
-      item.status="Downloading...";
-      goobrowRenderDownloads();
-
-      while(true){
-
-        const part=await reader.read();
-
-        if(part.done) break;
-
-        chunks.push(part.value);
-        received+=part.value.length;
-
-        if(total){
-          item.progress=Math.min(
-            99,
-            Math.round((received/total)*100)
-          );
-
-          item.status=
-            "Downloading "+item.progress+"%";
-        }else{
-          item.status=
-            "Downloading "+Math.round(received/1024)+" KB";
-        }
-
-        goobrowRenderDownloads();
-      }
-
-      const merged=new Uint8Array(received);
-      let offset=0;
-
-      for(const chunk of chunks){
-        merged.set(chunk,offset);
-        offset+=chunk.length;
-      }
-
-      let binary="";
-      const sliceSize=0x8000;
-
-      for(let i=0;i<merged.length;i+=sliceSize){
-        binary+=String.fromCharCode(
-          ...merged.subarray(
-            i,
-            Math.min(i+sliceSize,merged.length)
-          )
-        );
-      }
-
-      const base64=btoa(binary);
-
-      const filename=
-        goobrowSafeFilename(
-          name||"goobrow-download"
-        );
-
-      const result=
-        await CapacitorBridge.writeFile({
-          path:"Goobrow Downloads/"+filename,
-          data:base64,
-          directory:"DOCUMENTS",
-          recursive:true
-        });
-
-      item.filePath=
-        result.uri||
-        "Goobrow Downloads/"+filename;
-
-      item.progress=100;
-      item.status="Completed — saved on device";
-
-      goobrowRenderDownloads();
-
-      alert(
-        "Download complete!\n\nSaved by Goobrow as:\n"+
-        filename
-      );
-
-      return;
-    }
-
-    /*
-     * Browser fallback.
-     */
     const response=await fetch(url);
 
     if(!response.ok){
@@ -1950,14 +1753,18 @@ async function goobrowStartDownload(url,name){
     );
 
     if(!response.body){
+
       throw new Error("Streaming is unavailable.");
     }
 
     const reader=response.body.getReader();
+
     const chunks=[];
+
     let received=0;
 
     item.status="Downloading...";
+
     goobrowRenderDownloads();
 
     while(true){
@@ -1967,9 +1774,11 @@ async function goobrowStartDownload(url,name){
       if(part.done) break;
 
       chunks.push(part.value);
+
       received+=part.value.length;
 
       if(total){
+
         item.progress=Math.min(
           100,
           Math.round((received/total)*100)
@@ -1977,26 +1786,35 @@ async function goobrowStartDownload(url,name){
 
         item.status=
           "Downloading "+item.progress+"%";
+
       }else{
+
         item.status=
           "Downloading "+Math.round(received/1024)+" KB";
+
       }
 
       goobrowRenderDownloads();
+
     }
 
     const blob=new Blob(chunks);
+
     const objectURL=URL.createObjectURL(blob);
+
     const link=document.createElement("a");
 
     link.href=objectURL;
+
     link.download=
       goobrowSafeFilename(
         name||"goobrow-download"
       );
 
     document.body.appendChild(link);
+
     link.click();
+
     link.remove();
 
     setTimeout(function(){
@@ -2004,6 +1822,7 @@ async function goobrowStartDownload(url,name){
     },30000);
 
     item.progress=100;
+
     item.status="Completed";
 
     item.url=objectURL;
@@ -2012,20 +1831,19 @@ async function goobrowStartDownload(url,name){
 
   }catch(error){
 
-    console.error(
-      "Goobrow native download error:",
-      error
-    );
+    console.error("Goobrow download error:",error);
 
     item.status=
-      "Download failed: "+
-      (error.message||"source blocked direct download");
+      "Download failed. The source may block direct downloads.";
 
     item.progress=0;
 
     goobrowRenderDownloads();
+
   }
+
 }
+
 
 function goobrowSafeFilename(name){
 
@@ -2076,38 +1894,6 @@ function goobrowOpenDownloadedFile(url){
 
 /* END GOOBROW DOWNLOAD MANAGER UI */
 
-</script>
-
-
-<script id="goobrow-results-dark-script">
-(function(){
-  const KEY="goobrow-dark";
-  const root=document.documentElement;
-  const btn=document.getElementById("goobrowResultsDarkBtn");
-
-  function apply(){
-    const dark=localStorage.getItem(KEY)==="1";
-    root.classList.toggle("goobrow-dark",dark);
-    if(btn) btn.textContent=dark?"☀️ Light":"🌙 Dark";
-  }
-
-  if(btn){
-    btn.addEventListener("click",function(){
-      localStorage.setItem(
-        KEY,
-        root.classList.contains("goobrow-dark") ? "0" : "1"
-      );
-      apply();
-    });
-  }
-
-  const link=document.getElementById("goobrowGoogleSearchLink");
-  if(link){
-    link.href="https://www.google.com/search?q="+encodeURIComponent(query);
-  }
-
-  apply();
-})();
 </script>
 
 </body>
