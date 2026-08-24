@@ -212,7 +212,7 @@ public class GoobrowBrowserActivity extends Activity {
 
         if (value.matches("(?i)^https?://.*")) {
             target = value;
-        } else if (value.matches("^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$")) {
+        } else if (value.matches("^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}(/.*)?$")) {
             target = "https://" + value;
         } else {
             target =
