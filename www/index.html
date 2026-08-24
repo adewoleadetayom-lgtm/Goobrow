@@ -634,6 +634,80 @@ body{margin:0;font-family:Arial,sans-serif;color:#202124;background:#fff}
   margin-top:8px;
 }
 </style>
+
+<style id="goobrow-google-services-darkmode">
+.goobrow-google-services{
+  margin:18px auto;
+  max-width:1000px;
+  padding:16px;
+  border-radius:18px;
+  background:var(--gb-card,#fff);
+  border:1px solid var(--gb-border,#e5e7eb);
+  box-shadow:0 4px 18px rgba(0,0,0,.06);
+}
+.goobrow-google-services h3{
+  margin:0 0 12px;
+}
+.goobrow-google-service-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:10px;
+}
+.goobrow-google-service{
+  display:block;
+  padding:12px 8px;
+  border-radius:12px;
+  text-align:center;
+  text-decoration:none;
+  color:inherit;
+  background:var(--gb-soft,#f5f7fa);
+  border:1px solid var(--gb-border,#e5e7eb);
+  transition:.2s;
+}
+.goobrow-google-service:hover{
+  transform:translateY(-2px);
+}
+.goobrow-dark-toggle{
+  position:fixed;
+  right:16px;
+  bottom:16px;
+  z-index:99999;
+  border:0;
+  border-radius:999px;
+  padding:11px 15px;
+  cursor:pointer;
+  font-weight:700;
+  background:#202124;
+  color:#fff;
+  box-shadow:0 5px 18px rgba(0,0,0,.25);
+}
+body.goobrow-dark{
+  background:#101114 !important;
+  color:#f1f3f4 !important;
+}
+body.goobrow-dark .goobrow-google-services,
+body.goobrow-dark .card,
+body.goobrow-dark .result,
+body.goobrow-dark .search,
+body.goobrow-dark .goobrow-search-box{
+  background:#1b1c20 !important;
+  color:#f1f3f4 !important;
+  border-color:#34363d !important;
+}
+body.goobrow-dark .goobrow-google-service{
+  background:#24262b !important;
+  color:#f1f3f4 !important;
+  border-color:#3b3e46 !important;
+}
+body.goobrow-dark input,
+body.goobrow-dark textarea,
+body.goobrow-dark select{
+  background:#1b1c20 !important;
+  color:#f1f3f4 !important;
+  border-color:#444750 !important;
+}
+</style>
+
 </head>
 <body>
 
@@ -1111,7 +1185,7 @@ let timer;
 
 function goSearch(){
  const q=input.value.trim();
- if(q) location.href="https://www.google.com/search?q="+encodeURIComponent(q);
+ if(q) location.href="results.html?q="+encodeURIComponent(q)+"&mode=all;
 }
 
 function goImages(){
