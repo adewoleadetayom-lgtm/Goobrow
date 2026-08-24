@@ -1,4 +1,4 @@
-name: Goobrow Android APK
+name: Goobrow Android Diagnostic Build
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,18 +21,77 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - name: Check Android project
+      - name: Check Java and Gradle
         working-directory: android
         run: |
           chmod +x gradlew
+          echo "===== JAVA ====="
           java -version
+          echo
+          echo "===== GRADLE ====="
           ./gradlew --version
 
-      - name: Build Debug APK
+      - name: Build Debug APK with full diagnostic log
+        id: build
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon --stacktrace --info
+        shell: bash
+        run: |
+          set +e
 
-      - name: Upload Goobrow APK
+          echo "=================================================="
+          echo "GOOBROW GRADLE DIAGNOSTIC BUILD"
+          echo "=================================================="
+
+          ./gradlew assembleDebug \
+            --no-daemon \
+            --stacktrace \
+            --info \
+            2>&1 | tee ../gradle-build.log
+
+          BUILD_STATUS=${PIPESTATUS[0]}
+
+          echo
+          echo "=================================================="
+          echo "GRADLE EXIT CODE: $BUILD_STATUS"
+          echo "=================================================="
+
+          echo
+          echo "===== LAST 200 LINES OF GRADLE LOG ====="
+          tail -n 200 ../gradle-build.log
+
+          exit $BUILD_STATUS
+
+      - name: Show diagnostic summary
+        if: always()
+        working-directory: android
+        run: |
+          echo "=================================================="
+          echo "GOOBROW DIAGNOSTIC SUMMARY"
+          echo "=================================================="
+
+          if [ -f ../gradle-build.log ]; then
+            echo
+            echo "===== FAILURE / ERROR LINES ====="
+            grep -n -E \
+              "FAILURE:|What went wrong:|Caused by:|error:|Error:|Could not|Unable to|Exception" \
+              ../gradle-build.log | tail -n 100 || true
+
+            echo
+            echo "===== LAST 200 LINES ====="
+            tail -n 200 ../gradle-build.log
+          else
+            echo "gradle-build.log was not created."
+          fi
+
+      - name: Upload complete Gradle diagnostic log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Goobrow-Gradle-Diagnostic-Log
+          path: gradle-build.log
+          if-no-files-found: warn
+
+      - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
