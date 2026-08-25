@@ -38,6 +38,19 @@ jobs:
       - name: Sync Capacitor Android
         run: npx cap sync android
 
+      - name: Verify release keystore
+        env:
+          GOOBROW_KEYSTORE_BASE64: ${{ secrets.GOOBROW_KEYSTORE_BASE64 }}
+        run: |
+          echo "$GOOBROW_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/goobrow-verify.jks"
+          echo "=== KEYSTORE SIZE ==="
+          wc -c "$RUNNER_TEMP/goobrow-verify.jks"
+          echo "=== KEYSTORE SHA256 ==="
+          sha256sum "$RUNNER_TEMP/goobrow-verify.jks"
+          echo "=== KEYSTORE TEST ==="
+          keytool -list -keystore "$RUNNER_TEMP/goobrow-verify.jks" -alias "${{ secrets.GOOBROW_KEY_ALIAS }}" -storepass "${{ secrets.GOOBROW_STORE_PASSWORD }}" >/dev/null
+          echo "KEYSTORE VERIFICATION PASSED"
+
       - name: Build signed AAB
         env:
           GOOBROW_STORE_FILE: ${{ runner.temp }}/goobrow-upload.jks
