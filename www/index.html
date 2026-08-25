@@ -514,6 +514,51 @@ footer{
   }
 }
 </style>>>
+
+<style id="goobrow-2026-layout-fix">
+html, body {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.goobrow-2026-topbar {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.goobrow-home-news {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+#goobrowNewsGrid {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 700px) {
+  .goobrow-home-news {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+</style>
+
 </head>
 
 
@@ -3322,7 +3367,6 @@ searchInput.addEventListener("keydown",function(e){
    ============================================================ */
 
 async function loadGoobrowHomeNews(forceRefresh = false) {
-
   const status = document.getElementById("goobrowNewsStatus");
   const grid = document.getElementById("goobrowNewsGrid");
 
@@ -3332,15 +3376,21 @@ async function loadGoobrowHomeNews(forceRefresh = false) {
   grid.innerHTML = "";
 
   try {
-
-    const response = await fetch(
+    const url =
       "/api/news?q=" +
       encodeURIComponent("latest Nigeria news") +
-      (forceRefresh ? "&t=" + Date.now() : "")
-    );
+      (forceRefresh ? "&t=" + Date.now() : "");
+
+    const response = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        "Accept": "application/json"
+      }
+    });
 
     if (!response.ok) {
-      throw new Error("News request failed");
+      throw new Error("HTTP " + response.status);
     }
 
     const data = await response.json();
@@ -3349,87 +3399,52 @@ async function loadGoobrowHomeNews(forceRefresh = false) {
       : [];
 
     if (!stories.length) {
-      status.textContent =
-        "Latest news is temporarily unavailable.";
+      status.textContent = "Latest news is temporarily unavailable.";
       return;
     }
 
-    status.textContent =
-      "Latest Nigeria news";
+    status.textContent = "Latest Nigeria news";
 
-    stories.forEach((story) => {
-
+    stories.forEach(function(story) {
       const card = document.createElement("article");
       card.className = "goobrow-news-card";
 
+      const title = story.title || "News";
+      const source =
+        story.publisher ||
+        story.source ||
+        "Google News";
+      const date = story.publishedAt || "";
+      const description = story.description || "";
       const image =
         story.image ||
         story.imageUrl ||
         story.thumbnail ||
         "";
-
-      const title =
-        story.title ||
-        "Untitled news story";
-
-      const source =
-        story.publisher ||
-        story.source ||
-        "Google News";
-
-      const description =
-        story.description || "";
-
-      const date =
-        story.publishedAt || "";
-
-      const safeUrl =
+      const url =
         story.url ||
         story.link ||
-        "#";
+        "";
 
       card.innerHTML = `
         <div class="goobrow-news-image-wrap">
-
           ${
             image
-              ? `
-                <img
-                  class="goobrow-news-image"
-                  src="${escapeGoobrowHtml(image)}"
-                  alt=""
-                  loading="lazy"
-                  onerror="this.style.display='none'"
-                >
-              `
-              : `
-                <div
-                  style="
-                    width:100%;
-                    height:100%;
-                    display:flex;
-                    align-items:center;
-                    justify-content:center;
-                    color:#5f6368;
-                    font-size:34px;
-                  "
-                >
-                  📰
-                </div>
-              `
+              ? `<img
+                   class="goobrow-news-image"
+                   src="${escapeGoobrowHtml(image)}"
+                   alt=""
+                   loading="lazy"
+                   onerror="this.parentElement.innerHTML='<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:34px;color:#5f6368">📰</div>'"
+                 >`
+              : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:34px;color:#5f6368">📰</div>`
           }
-
         </div>
 
         <div class="goobrow-news-body">
-
           <div class="goobrow-news-source">
             ${escapeGoobrowHtml(source)}
-            ${
-              date
-                ? " • " + escapeGoobrowHtml(formatGoobrowDate(date))
-                : ""
-            }
+            ${date ? " • " + escapeGoobrowHtml(formatGoobrowDate(date)) : ""}
           </div>
 
           <h3 class="goobrow-news-title">
@@ -3438,72 +3453,42 @@ async function loadGoobrowHomeNews(forceRefresh = false) {
 
           ${
             description
-              ? `
-                <div class="goobrow-news-description">
-                  ${escapeGoobrowHtml(
-                    description
-                      .replace(/\s+/g, " ")
-                      .slice(0, 180)
-                  )}
-                </div>
-              `
+              ? `<div class="goobrow-news-description">
+                   ${escapeGoobrowHtml(
+                     description.replace(/\s+/g, " ").slice(0, 180)
+                   )}
+                 </div>`
               : ""
           }
-
         </div>
       `;
 
-      card.addEventListener("click", () => {
+      card.addEventListener("click", function() {
+        if (!url) return;
 
         if (
-          safeUrl &&
-          safeUrl !== "#"
+          window.Capacitor &&
+          window.Capacitor.Plugins &&
+          window.Capacitor.Plugins.GoobrowBrowser
         ) {
-
-          if (
-            window.Capacitor &&
-            window.Capacitor.Plugins &&
-            window.Capacitor.Plugins.GoobrowBrowser
-          ) {
-
-            window.Capacitor.Plugins.GoobrowBrowser
-              .openBrowser({ url: safeUrl })
-              .catch(() => {
-                window.open(
-                  safeUrl,
-                  "_blank"
-                );
-              });
-
-          } else {
-
-            window.open(
-              safeUrl,
-              "_blank"
-            );
-
-          }
-
+          window.Capacitor.Plugins.GoobrowBrowser
+            .openBrowser({ url: url })
+            .catch(function() {
+              window.open(url, "_blank");
+            });
+        } else {
+          window.open(url, "_blank");
         }
-
       });
 
       grid.appendChild(card);
-
     });
 
   } catch (error) {
-
-    console.error(
-      "Goobrow homepage news error:",
-      error
-    );
-
+    console.error("Goobrow homepage news error:", error);
     status.textContent =
       "Unable to load latest news. Tap Refresh to try again.";
-
   }
-
 }
 
 
