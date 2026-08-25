@@ -3620,7 +3620,15 @@ async function loadGoobrowHomeNews(forceRefresh = false) {
   grid.innerHTML = "";
 
   try {
+    const goobrowNewsApiBase =
+      (window.Capacitor &&
+       window.Capacitor.isNativePlatform &&
+       window.Capacitor.isNativePlatform())
+        ? "https://goobrow.onrender.com"
+        : "";
+
     const url =
+      goobrowNewsApiBase +
       "/api/news?q=" +
       encodeURIComponent("latest Nigeria news") +
       (forceRefresh ? "&t=" + Date.now() : "");
