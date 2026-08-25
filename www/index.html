@@ -3190,10 +3190,13 @@ function goobrowGoogleSearch(event){
 
   googleSuggestionHide();
 
-  const googleUrl="https://www.google.com/search?q="+encodeURIComponent(q);
+  const lang=localStorage.getItem("goobrowLanguage")||"en";
+  const locale={en:"en-NG",fr:"fr-FR",es:"es-ES",pt:"pt-PT",ar:"ar",hi:"hi-IN",zh:"zh-CN",ja:"ja-JP",ko:"ko-KR",yo:"en-NG"}[lang]||"en-NG";
+  const region={en:"NG",fr:"FR",es:"ES",pt:"PT",ar:"AE",hi:"IN",zh:"CN",ja:"JP",ko:"KR",yo:"NG"}[lang]||"NG";
+  const googleUrl="https://www.google.com/search?q="+encodeURIComponent(q)+"&hl="+encodeURIComponent(locale)+"&gl="+encodeURIComponent(region);
 
   if(typeof gbOpenBrowser==="function"){
-    gbOpenBrowser("https://www.google.com/search?q="+encodeURIComponent(q));
+    gbOpenBrowser(googleUrl);
   }else{
     window.location.href=googleUrl;
   }
@@ -3250,7 +3253,7 @@ function googleVoiceSearch(){
 
   const recognition=new SpeechRecognition();
 
-  recognition.lang="en-NG";
+  recognition.lang=({en:"en-NG",fr:"fr-FR",es:"es-ES",pt:"pt-PT",ar:"ar-SA",hi:"hi-IN",zh:"zh-CN",ja:"ja-JP",ko:"ko-KR",yo:"yo-NG"}[localStorage.getItem("goobrowLanguage")||"en"]||"en-NG");
   recognition.interimResults=false;
   recognition.maxAlternatives=1;
 
@@ -3820,7 +3823,13 @@ async function loadGoobrowHomeNews(forceRefresh = false) {
     const url =
       goobrowNewsApiBase +
       "/api/news?q=" +
-      encodeURIComponent("latest Nigeria news") +
+      encodeURIComponent((function(){
+const topics=["latest Nigeria news","latest world news","latest technology news","latest sports news","latest business news","latest entertainment news","latest science news"];
+let i=Number(localStorage.getItem("goobrowNewsTopicIndex")||0);
+if(forceRefresh)i=(i+1)%topics.length;
+localStorage.setItem("goobrowNewsTopicIndex",i);
+return topics[i];
+})()) +
       (forceRefresh ? "&t=" + Date.now() : "");
 
     const response = await fetch(url, {
@@ -3846,7 +3855,7 @@ async function loadGoobrowHomeNews(forceRefresh = false) {
       return;
     }
 
-    status.textContent = "Latest Nigeria news";
+    status.textContent = "Latest Goobrow News • Updated "+new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
 
     stories.forEach(function(story) {
       const card = document.createElement("article");
@@ -4677,5 +4686,30 @@ if(document.readyState==="loading"){
 })();
 </script>
 
+<!-- GOOBROW-SPECIAL-FEATURES-2026 -->
+<script>
+(function(){
+const box=document.getElementById("searchInput");
+if(!box)return;
+const features=[
+["🎓","Academic","academicSearch()"],
+["🎙️","Voice","googleVoiceSearch()"],
+["📰","News","goobrowShowNews()"],
+["🕘","History","alert((JSON.parse(localStorage.getItem("goobrowHistory")||"[]").join("\\n"))||"No search history yet.")"],
+["🎲","Explore","box.value="latest technology news";goobrowGoogleSearch()"]
+];
+const bar=document.createElement("div");
+bar.style.cssText="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px auto;max-width:700px";
+features.forEach(f=>{
+const b=document.createElement("button");
+b.innerHTML=f[0]+" "+f[1];
+b.type="button";
+b.onclick=function(){try{eval(f[2])}catch(e){console.log(e)}};
+b.style.cssText="border:1px solid #ddd;border-radius:18px;padding:8px 13px;background:transparent;cursor:pointer";
+bar.appendChild(b);
+});
+box.parentElement.parentElement.after(bar);
+})();
+</script>
 </body>
 </html>
