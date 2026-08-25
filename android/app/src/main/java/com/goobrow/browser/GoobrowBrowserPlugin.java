@@ -1,6 +1,9 @@
 package com.goobrow.browser;
 
-import android.content.Intent;
+import android.net.Uri;
+
+import androidx.browser.customtabs.CustomTabsIntent;
+
 import com.getcapacitor.Plugin;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.PluginCall;
@@ -12,19 +15,42 @@ public class GoobrowBrowserPlugin extends Plugin {
 
     @PluginMethod
     public void openBrowser(PluginCall call) {
-        String url = call.getString("url", "https://www.google.com/");
+
+        String url = call.getString(
+                "url",
+                "https://www.google.com/"
+        );
 
         if (url == null || url.trim().isEmpty()) {
             url = "https://www.google.com/";
         }
 
-        Intent intent = new Intent(getActivity(), GoobrowBrowserActivity.class);
-        intent.putExtra("url", url);
+        try {
 
-        getActivity().startActivity(intent);
+            CustomTabsIntent.Builder builder =
+                    new CustomTabsIntent.Builder();
 
-        JSObject result = new JSObject();
-        result.put("opened", true);
-        call.resolve(result);
+            builder.setShowTitle(true);
+
+            CustomTabsIntent customTabsIntent =
+                    builder.build();
+
+            customTabsIntent.launchUrl(
+                    getActivity(),
+                    Uri.parse(url)
+            );
+
+            JSObject result = new JSObject();
+            result.put("opened", true);
+            result.put("mode", "custom-tab");
+
+            call.resolve(result);
+
+        } catch (Exception e) {
+
+            call.reject(
+                    "Unable to open browser: " + e.getMessage()
+            );
+        }
     }
 }
