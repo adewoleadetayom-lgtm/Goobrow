@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: goobrow-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /
