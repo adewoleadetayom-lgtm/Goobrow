@@ -368,7 +368,6 @@ app.use(cors({
   credentials: false
 }));
 
-app.options("*", cors());
 
 app.use(express.static(path.join(__dirname, "www")));
 
