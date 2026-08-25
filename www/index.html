@@ -601,6 +601,89 @@ body.dark .news-image-fallback{
 }
 </style>
 
+
+
+<style id="goobrow-2026-language-selector">
+.goobrow-language-selector{
+  width:100%;
+  max-width:900px;
+  margin:30px auto 24px;
+  padding:12px 16px;
+  text-align:center;
+  box-sizing:border-box;
+}
+
+.goobrow-language-title{
+  color:#5f6368;
+  font-size:14px;
+  margin-bottom:12px;
+}
+
+.goobrow-language-list{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:center;
+  gap:7px 14px;
+}
+
+.goobrow-language-list button{
+  border:0;
+  background:transparent;
+  color:#1a73e8;
+  cursor:pointer;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:13px;
+  padding:4px 2px;
+  border-radius:4px;
+}
+
+.goobrow-language-list button:hover{
+  text-decoration:underline;
+  background:#f1f3f4;
+}
+
+.goobrow-language-list button.active{
+  font-weight:600;
+}
+
+body.dark .goobrow-language-title{
+  color:#bdc1c6;
+}
+
+body.dark .goobrow-language-list button{
+  color:#8ab4f8;
+}
+
+body.dark .goobrow-language-list button:hover{
+  background:#303134;
+}
+
+@media(max-width:600px){
+  .goobrow-language-selector{
+    margin:24px auto 18px;
+    padding:10px;
+  }
+
+  .goobrow-language-list{
+    gap:5px 10px;
+  }
+
+  .goobrow-language-list button{
+    font-size:12px;
+  }
+}
+</style>
+
+
+
+<style id="goobrow-2026-real-language-css">
+.goobrow-language-list button.active{
+  font-weight:700 !important;
+  text-decoration:underline;
+}
+</style>
+
 </head>
 
 
@@ -3825,6 +3908,412 @@ function goobrowProfile(){
     }
 
   }catch(e){}
+
+})();
+</script>
+
+
+
+<!-- ============================================================
+     GOOBROW 2026 — LANGUAGE SELECTOR
+     ============================================================ -->
+<div id="goobrowLanguageSelector" class="goobrow-language-selector">
+  <div class="goobrow-language-title">
+    Goobrow offered in:
+  </div>
+
+  <div class="goobrow-language-list">
+    <button type="button" data-lang="en">English</button>
+    <button type="button" data-lang="fr">Français</button>
+    <button type="button" data-lang="es">Español</button>
+    <button type="button" data-lang="pt">Português</button>
+    <button type="button" data-lang="ar">العربية</button>
+    <button type="button" data-lang="hi">हिन्दी</button>
+    <button type="button" data-lang="zh">中文</button>
+    <button type="button" data-lang="ja">日本語</button>
+    <button type="button" data-lang="ko">한국어</button>
+    <button type="button" data-lang="yo">Yorùbá</button>
+  </div>
+</div>
+
+
+
+<script id="goobrow-2026-language-script">
+(function(){
+  const languages = {
+    en: "English",
+    fr: "Français",
+    es: "Español",
+    pt: "Português",
+    ar: "العربية",
+    hi: "हिन्दी",
+    zh: "中文",
+    ja: "日本語",
+    ko: "한국어",
+    yo: "Yorùbá"
+  };
+
+  function setGoobrowLanguage(lang){
+    if(!languages[lang]) return;
+
+    try{
+      localStorage.setItem("goobrowLanguage", lang);
+    }catch(e){}
+
+    document.querySelectorAll(
+      "#goobrowLanguageSelector button[data-lang]"
+    ).forEach(function(button){
+      button.classList.toggle(
+        "active",
+        button.getAttribute("data-lang") === lang
+      );
+    });
+
+    document.documentElement.setAttribute("lang", lang);
+
+    /*
+      Keep the current Goobrow page intact.
+      The selected language is saved for future multilingual
+      interface upgrades without changing existing features.
+    */
+    console.log("Goobrow language selected:", languages[lang]);
+  }
+
+  function initGoobrowLanguages(){
+    let saved = "en";
+
+    try{
+      saved = localStorage.getItem("goobrowLanguage") || "en";
+    }catch(e){}
+
+    document.querySelectorAll(
+      "#goobrowLanguageSelector button[data-lang]"
+    ).forEach(function(button){
+      button.addEventListener("click", function(){
+        setGoobrowLanguage(
+          button.getAttribute("data-lang")
+        );
+      });
+    });
+
+    setGoobrowLanguage(saved);
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener(
+      "DOMContentLoaded",
+      initGoobrowLanguages
+    );
+  }else{
+    initGoobrowLanguages();
+  }
+})();
+</script>
+
+
+
+<!-- ============================================================
+     GOOBROW 2026 — REAL MULTILINGUAL UI
+     ============================================================ -->
+<script id="goobrow-2026-real-multilingual-ui">
+(function(){
+
+const goobrowTranslations = {
+  en:{
+    search:"Google Search",
+    lucky:"I'm Feeling Lucky",
+    academic:"Academic",
+    latest:"Latest News",
+    newsTitle:"Top stories from Google News",
+    refresh:"Refresh",
+    offered:"Goobrow offered in:",
+    searchPlaceholder:"Search Goobrow"
+  },
+  fr:{
+    search:"Recherche Google",
+    lucky:"J'ai de la chance",
+    academic:"Académique",
+    latest:"Dernières actualités",
+    newsTitle:"Actualités principales de Google News",
+    refresh:"Actualiser",
+    offered:"Goobrow proposé en :",
+    searchPlaceholder:"Rechercher sur Goobrow"
+  },
+  es:{
+    search:"Búsqueda de Google",
+    lucky:"Voy a tener suerte",
+    academic:"Académico",
+    latest:"Últimas noticias",
+    newsTitle:"Principales noticias de Google News",
+    refresh:"Actualizar",
+    offered:"Goobrow disponible en:",
+    searchPlaceholder:"Buscar en Goobrow"
+  },
+  pt:{
+    search:"Pesquisa Google",
+    lucky:"Estou com sorte",
+    academic:"Acadêmico",
+    latest:"Últimas notícias",
+    newsTitle:"Principais notícias do Google News",
+    refresh:"Atualizar",
+    offered:"Goobrow disponível em:",
+    searchPlaceholder:"Pesquisar no Goobrow"
+  },
+  ar:{
+    search:"بحث Google",
+    lucky:"ضربة حظ",
+    academic:"أكاديمي",
+    latest:"آخر الأخبار",
+    newsTitle:"أهم الأخبار من أخبار Google",
+    refresh:"تحديث",
+    offered:"Goobrow متاح باللغة:",
+    searchPlaceholder:"البحث في Goobrow"
+  },
+  hi:{
+    search:"Google खोज",
+    lucky:"मैं भाग्यशाली महसूस कर रहा हूँ",
+    academic:"शैक्षणिक",
+    latest:"नवीनतम समाचार",
+    newsTitle:"Google समाचार की प्रमुख खबरें",
+    refresh:"रिफ्रेश",
+    offered:"Goobrow इन भाषाओं में उपलब्ध है:",
+    searchPlaceholder:"Goobrow खोजें"
+  },
+  zh:{
+    search:"Google 搜索",
+    lucky:"手气不错",
+    academic:"学术",
+    latest:"最新新闻",
+    newsTitle:"Google 新闻头条",
+    refresh:"刷新",
+    offered:"Goobrow 提供以下语言：",
+    searchPlaceholder:"搜索 Goobrow"
+  },
+  ja:{
+    search:"Google 検索",
+    lucky:"I'm Feeling Lucky",
+    academic:"学術",
+    latest:"最新ニュース",
+    newsTitle:"Google ニュースのトップストーリー",
+    refresh:"更新",
+    offered:"Goobrow の対応言語：",
+    searchPlaceholder:"Goobrow を検索"
+  },
+  ko:{
+    search:"Google 검색",
+    lucky:"I'm Feeling Lucky",
+    academic:"학술",
+    latest:"최신 뉴스",
+    newsTitle:"Google 뉴스 주요 뉴스",
+    refresh:"새로고침",
+    offered:"Goobrow 제공 언어:",
+    searchPlaceholder:"Goobrow 검색"
+  },
+  yo:{
+    search:"Wiwa Google",
+    lucky:"Mo ni orire",
+    academic:"Ẹkọ́",
+    latest:"Àwọn Ìròyìn Tó Kẹ́yìn",
+    newsTitle:"Àwọn ìròyìn pàtàkì láti Google News",
+    refresh:"Tún ṣe",
+    offered:"Goobrow wà ní àwọn èdè wọ̀nyí:",
+    searchPlaceholder:"Wá Goobrow"
+  }
+};
+
+function goobrowApplyLanguage(lang){
+
+  const t = goobrowTranslations[lang] || goobrowTranslations.en;
+
+  document.documentElement.lang = lang;
+
+  try{
+    localStorage.setItem("goobrowLanguage",lang);
+  }catch(e){}
+
+  /* Search buttons */
+  document.querySelectorAll(
+    'button, input[type="button"], input[type="submit"]'
+  ).forEach(function(el){
+
+    const text=(el.textContent || el.value || "").trim();
+
+    if(
+      text==="Google Search" ||
+      text==="Recherche Google" ||
+      text==="Búsqueda de Google" ||
+      text==="Pesquisa Google" ||
+      text==="بحث Google" ||
+      text==="Google खोज" ||
+      text==="Google 搜索" ||
+      text==="Google 検索" ||
+      text==="Google 검색" ||
+      text==="Wiwa Google"
+    ){
+      if(el.tagName==="INPUT") el.value=t.search;
+      else el.textContent=t.search;
+    }
+
+    if(
+      text==="I'm Feeling Lucky" ||
+      text==="J'ai de la chance" ||
+      text==="Voy a tener suerte" ||
+      text==="Estou com sorte"
+    ){
+      if(el.tagName==="INPUT") el.value=t.lucky;
+      else el.textContent=t.lucky;
+    }
+
+    if(
+      text==="Academic" ||
+      text==="Académique" ||
+      text==="Académico" ||
+      text==="Acadêmico" ||
+      text==="أكاديمي" ||
+      text==="शैक्षणिक" ||
+      text==="学术" ||
+      text==="学術" ||
+      text==="학술" ||
+      text==="Ẹkọ́"
+    ){
+      el.textContent=t.academic;
+    }
+
+  });
+
+  /* Homepage news heading */
+  document.querySelectorAll("h1,h2,h3,div,span").forEach(function(el){
+
+    const text=(el.textContent || "").trim();
+
+    if(
+      text==="Latest News" ||
+      text==="Dernières actualités" ||
+      text==="Últimas noticias" ||
+      text==="Últimas notícias" ||
+      text==="آخر الأخبار" ||
+      text==="नवीनतम समाचार" ||
+      text==="最新新闻" ||
+      text==="最新ニュース" ||
+      text==="최신 뉴스" ||
+      text==="Àwọn Ìròyìn Tó Kẹ́yìn"
+    ){
+      el.textContent=t.latest;
+    }
+
+    if(
+      text==="Top stories from Google News" ||
+      text==="Actualités principales de Google News" ||
+      text==="Principales noticias de Google News" ||
+      text==="Principais notícias do Google News" ||
+      text==="أهم الأخبار من أخبار Google" ||
+      text==="Google समाचार की प्रमुख खबरें" ||
+      text==="Google 新闻头条" ||
+      text==="Google ニュースのトップストーリー" ||
+      text==="Google 뉴스 주요 뉴스"
+    ){
+      el.textContent=t.newsTitle;
+    }
+
+    if(
+      text==="Goobrow offered in:" ||
+      text==="Goobrow proposé en :" ||
+      text==="Goobrow disponible en:" ||
+      text==="Goobrow متاح باللغة:" ||
+      text==="Goobrow इन भाषाओं में उपलब्ध है:" ||
+      text==="Goobrow 提供以下语言：" ||
+      text==="Goobrow の対応言語：" ||
+      text==="Goobrow 제공 언어:" ||
+      text==="Goobrow wà ní àwọn èdè wọ̀nyí:"
+    ){
+      el.textContent=t.offered;
+    }
+
+  });
+
+  /* Search boxes */
+  document.querySelectorAll(
+    'input[type="search"],input[name="q"],input[placeholder]'
+  ).forEach(function(input){
+    if(input.placeholder){
+      input.placeholder=t.searchPlaceholder;
+    }
+  });
+
+  /* Refresh buttons */
+  document.querySelectorAll("button").forEach(function(btn){
+    const text=(btn.textContent || "").trim();
+
+    if(
+      text==="Refresh" ||
+      text==="Actualiser" ||
+      text==="Actualizar" ||
+      text==="Atualizar" ||
+      text==="تحديث" ||
+      text==="रिफ्रेश" ||
+      text==="刷新" ||
+      text==="更新" ||
+      text==="새로고침" ||
+      text==="Tún ṣe"
+    ){
+      btn.textContent=t.refresh;
+    }
+  });
+
+  /* Mark selected language */
+  document.querySelectorAll(
+    "#goobrowLanguageSelector button[data-lang]"
+  ).forEach(function(btn){
+    btn.classList.toggle(
+      "active",
+      btn.dataset.lang===lang
+    );
+  });
+
+  /* RTL support for Arabic */
+  if(lang==="ar"){
+    document.documentElement.dir="rtl";
+  }else{
+    document.documentElement.dir="ltr";
+  }
+
+  console.log("Goobrow language:",lang);
+}
+
+window.goobrowApplyLanguage=goobrowApplyLanguage;
+window.goobrowTranslations=goobrowTranslations;
+
+function goobrowInitRealLanguage(){
+
+  let lang="en";
+
+  try{
+    lang=localStorage.getItem("goobrowLanguage") || "en";
+  }catch(e){}
+
+  if(!goobrowTranslations[lang]) lang="en";
+
+  document.querySelectorAll(
+    "#goobrowLanguageSelector button[data-lang]"
+  ).forEach(function(btn){
+
+    btn.addEventListener("click",function(){
+      goobrowApplyLanguage(btn.dataset.lang);
+    });
+
+  });
+
+  goobrowApplyLanguage(lang);
+}
+
+if(document.readyState==="loading"){
+  document.addEventListener(
+    "DOMContentLoaded",
+    goobrowInitRealLanguage
+  );
+}else{
+  goobrowInitRealLanguage();
+}
 
 })();
 </script>
