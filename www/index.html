@@ -597,6 +597,25 @@ footer{
       <a href="#" onclick="return false">English</a>
     </div>
 
+    <!-- ===== GOOGLE-STYLE HOMEPAGE NEWS ===== -->
+    <section id="goobrowHomeNews" class="goobrow-home-news">
+      <div class="goobrow-news-heading">
+        <div>
+          <h2>Latest News</h2>
+          <p>Top stories from Google News</p>
+        </div>
+        <button type="button" onclick="loadGoobrowHomeNews(true)">
+          Refresh
+        </button>
+      </div>
+
+      <div id="goobrowNewsStatus" class="goobrow-news-status">
+        Loading latest news...
+      </div>
+
+      <div id="goobrowNewsGrid" class="goobrow-news-grid"></div>
+    </section>
+
   </main>
 
   <footer class="google-footer">
@@ -944,6 +963,679 @@ body.dark .google-country{
     gap:18px;
   }
 }
+
+/* ============================================================
+   GOOBROW GOOGLE-STYLE HOMEPAGE NEWS
+   ============================================================ */
+
+.goobrow-home-news{
+  width:min(1100px,92%);
+  margin:35px auto 50px;
+  padding:24px 0 10px;
+  border-top:1px solid #dadce0;
+}
+
+.goobrow-news-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  margin-bottom:18px;
+}
+
+.goobrow-news-heading h2{
+  margin:0;
+  font-size:24px;
+  font-weight:500;
+  color:#202124;
+}
+
+.goobrow-news-heading p{
+  margin:5px 0 0;
+  color:#5f6368;
+  font-size:14px;
+}
+
+.goobrow-news-heading button{
+  border:1px solid #dadce0;
+  background:white;
+  color:#1a73e8;
+  border-radius:20px;
+  padding:9px 17px;
+  cursor:pointer;
+  font-size:14px;
+}
+
+.goobrow-news-heading button:hover{
+  background:#f8f9fa;
+}
+
+.goobrow-news-status{
+  color:#5f6368;
+  font-size:14px;
+  margin:10px 0 18px;
+}
+
+.goobrow-news-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:18px;
+}
+
+.goobrow-news-card{
+  border:1px solid #dadce0;
+  border-radius:14px;
+  overflow:hidden;
+  background:white;
+  cursor:pointer;
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+
+.goobrow-news-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 3px 12px rgba(60,64,67,.18);
+}
+
+.goobrow-news-image-wrap{
+  width:100%;
+  height:170px;
+  background:#f1f3f4;
+  overflow:hidden;
+}
+
+.goobrow-news-image{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.goobrow-news-body{
+  padding:15px;
+}
+
+.goobrow-news-source{
+  color:#5f6368;
+  font-size:12px;
+  margin-bottom:7px;
+}
+
+.goobrow-news-title{
+  color:#202124;
+  font-size:17px;
+  line-height:1.35;
+  font-weight:500;
+  margin:0 0 9px;
+}
+
+.goobrow-news-description{
+  color:#5f6368;
+  font-size:13px;
+  line-height:1.45;
+}
+
+.goobrow-news-video{
+  position:relative;
+}
+
+.goobrow-news-video::after{
+  content:"▶";
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  background:rgba(0,0,0,.72);
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+}
+
+.goobrow-news-empty{
+  grid-column:1/-1;
+  padding:30px;
+  text-align:center;
+  color:#5f6368;
+}
+
+body.dark .goobrow-home-news{
+  border-top-color:#3c4043;
+}
+
+body.dark .goobrow-news-heading h2,
+body.dark .goobrow-news-title{
+  color:#e8eaed;
+}
+
+body.dark .goobrow-news-heading p,
+body.dark .goobrow-news-source,
+body.dark .goobrow-news-description,
+body.dark .goobrow-news-status{
+  color:#bdc1c6;
+}
+
+body.dark .goobrow-news-card{
+  background:#202124;
+  border-color:#3c4043;
+}
+
+body.dark .goobrow-news-heading button{
+  background:#202124;
+  border-color:#5f6368;
+}
+
+@media(max-width:800px){
+  .goobrow-news-grid{
+    grid-template-columns:repeat(2,1fr);
+  }
+}
+
+@media(max-width:560px){
+  .goobrow-home-news{
+    width:94%;
+    margin-top:25px;
+  }
+
+  .goobrow-news-grid{
+    grid-template-columns:1fr;
+  }
+
+  .goobrow-news-image-wrap{
+    height:190px;
+  }
+
+  .goobrow-news-heading h2{
+    font-size:21px;
+  }
+}
+
+
+/* ============================================================
+   GOOBROW — MODERN GOOGLE-INSPIRED SEARCH HOMEPAGE
+   ============================================================ */
+
+.google-home{
+  min-height:100vh;
+  min-height:100dvh;
+  background:#fff;
+  color:#202124;
+  display:flex;
+  flex-direction:column;
+  font-family:Arial,Helvetica,sans-serif;
+}
+
+.google-topbar{
+  height:64px;
+  min-height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 24px;
+  box-sizing:border-box;
+}
+
+.google-top-left,
+.google-top-right{
+  display:flex;
+  align-items:center;
+  gap:20px;
+}
+
+.google-topbar a{
+  color:#202124;
+  text-decoration:none;
+  font-size:14px;
+}
+
+.google-topbar a:hover{
+  text-decoration:underline;
+}
+
+.google-apps,
+.google-profile{
+  border:0;
+  background:transparent;
+  cursor:pointer;
+}
+
+.google-apps{
+  font-size:20px;
+  color:#5f6368;
+  padding:8px;
+  border-radius:50%;
+}
+
+.google-apps:hover{
+  background:#f1f3f4;
+}
+
+.google-profile{
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:#1a73e8;
+  color:white;
+  font-size:18px;
+  font-weight:500;
+}
+
+.google-main{
+  width:100%;
+  max-width:760px;
+  margin:auto;
+  padding:40px 20px 30px;
+  box-sizing:border-box;
+  text-align:center;
+}
+
+.google-wordmark{
+  font-size:76px;
+  line-height:1;
+  letter-spacing:-5px;
+  font-weight:500;
+  margin:10px 0 34px;
+  user-select:none;
+}
+
+.google-search-form{
+  width:100%;
+}
+
+.google-search-box{
+  width:100%;
+  height:52px;
+  border:1px solid #dfe1e5;
+  border-radius:28px;
+  display:flex;
+  align-items:center;
+  box-sizing:border-box;
+  padding:0 15px;
+  background:#fff;
+  transition:box-shadow .15s ease,border-color .15s ease;
+}
+
+.google-search-box:hover,
+.google-search-box:focus-within{
+  border-color:transparent;
+  box-shadow:0 1px 6px rgba(32,33,36,.20);
+}
+
+.google-search-icon{
+  color:#5f6368;
+  font-size:25px;
+  width:30px;
+  flex:0 0 30px;
+}
+
+.google-search-box input{
+  flex:1;
+  min-width:0;
+  height:100%;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:#202124;
+  font-size:16px;
+  padding:0 8px;
+}
+
+.google-search-box input::placeholder{
+  color:#5f6368;
+}
+
+.google-voice,
+.google-submit{
+  border:0;
+  background:transparent;
+  cursor:pointer;
+  color:#5f6368;
+}
+
+.google-voice{
+  font-size:19px;
+  padding:8px;
+}
+
+.google-submit{
+  display:none;
+}
+
+.google-buttons{
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  margin-top:28px;
+  flex-wrap:wrap;
+}
+
+.google-buttons button{
+  border:1px solid #f8f9fa;
+  background:#f8f9fa;
+  color:#202124;
+  border-radius:4px;
+  padding:10px 18px;
+  font-size:14px;
+  cursor:pointer;
+  min-height:40px;
+}
+
+.google-buttons button:hover{
+  border-color:#dadce0;
+  box-shadow:0 1px 1px rgba(0,0,0,.1);
+}
+
+.google-buttons .academic-button{
+  background:#fff;
+  border-color:#dadce0;
+  color:#1a73e8;
+}
+
+.google-language{
+  margin-top:30px;
+  font-size:13px;
+  color:#5f6368;
+}
+
+.google-language a{
+  color:#1a0dab;
+  text-decoration:none;
+  margin-left:5px;
+}
+
+.goobrow-home-news{
+  width:min(1100px,94%);
+  margin:20px auto 40px;
+  padding:28px 0 0;
+  border-top:1px solid #dadce0;
+}
+
+.goobrow-news-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:18px;
+}
+
+.goobrow-news-heading h2{
+  margin:0;
+  font-size:22px;
+  font-weight:400;
+  color:#202124;
+  text-align:left;
+}
+
+.goobrow-news-heading p{
+  margin:5px 0 0;
+  color:#5f6368;
+  font-size:13px;
+  text-align:left;
+}
+
+.goobrow-news-heading button{
+  border:1px solid #dadce0;
+  background:#fff;
+  color:#1a73e8;
+  border-radius:20px;
+  padding:8px 16px;
+  cursor:pointer;
+}
+
+.goobrow-news-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+}
+
+.goobrow-news-card{
+  border:1px solid #dadce0;
+  border-radius:12px;
+  overflow:hidden;
+  background:#fff;
+  text-align:left;
+  cursor:pointer;
+  transition:box-shadow .15s ease,transform .15s ease;
+}
+
+.goobrow-news-card:hover{
+  box-shadow:0 2px 10px rgba(60,64,67,.18);
+  transform:translateY(-1px);
+}
+
+.goobrow-news-image-wrap{
+  height:165px;
+  background:#f1f3f4;
+  overflow:hidden;
+}
+
+.goobrow-news-image{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.goobrow-news-body{
+  padding:14px 15px 17px;
+}
+
+.goobrow-news-source{
+  color:#5f6368;
+  font-size:12px;
+  margin-bottom:7px;
+}
+
+.goobrow-news-title{
+  margin:0;
+  color:#202124;
+  font-size:16px;
+  line-height:1.35;
+  font-weight:500;
+}
+
+.goobrow-news-description{
+  color:#5f6368;
+  font-size:13px;
+  line-height:1.4;
+  margin-top:8px;
+}
+
+.goobrow-news-video{
+  position:relative;
+}
+
+.goobrow-news-video::after{
+  content:"▶";
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  background:rgba(0,0,0,.72);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.google-footer{
+  margin-top:auto;
+  background:#f2f2f2;
+  color:#5f6368;
+}
+
+.google-country{
+  padding:15px 30px;
+  border-bottom:1px solid #dadce0;
+  font-size:15px;
+}
+
+.google-footer-links{
+  min-height:48px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:0 30px;
+}
+
+.google-footer-links div{
+  display:flex;
+  gap:25px;
+}
+
+.google-footer-links a{
+  color:#5f6368;
+  text-decoration:none;
+  font-size:14px;
+}
+
+.google-footer-links a:hover{
+  text-decoration:underline;
+}
+
+/* DARK MODE */
+
+body.dark .google-home{
+  background:#202124;
+  color:#e8eaed;
+}
+
+body.dark .google-topbar a,
+body.dark .google-wordmark,
+body.dark .google-search-box input,
+body.dark .google-buttons button{
+  color:#e8eaed;
+}
+
+body.dark .google-search-box{
+  background:#303134;
+  border-color:#5f6368;
+}
+
+body.dark .google-search-box input::placeholder{
+  color:#bdc1c6;
+}
+
+body.dark .google-buttons button{
+  background:#303134;
+  border-color:#5f6368;
+}
+
+body.dark .google-buttons .academic-button{
+  color:#8ab4f8;
+}
+
+body.dark .google-language,
+body.dark .goobrow-news-heading p,
+body.dark .goobrow-news-source,
+body.dark .goobrow-news-description{
+  color:#bdc1c6;
+}
+
+body.dark .goobrow-home-news{
+  border-color:#3c4043;
+}
+
+body.dark .goobrow-news-card{
+  background:#303134;
+  border-color:#5f6368;
+}
+
+body.dark .goobrow-news-heading h2,
+body.dark .goobrow-news-title{
+  color:#e8eaed;
+}
+
+body.dark .goobrow-news-heading button{
+  background:#303134;
+  border-color:#5f6368;
+  color:#8ab4f8;
+}
+
+body.dark .google-footer{
+  background:#171717;
+  border-color:#3c4043;
+}
+
+body.dark .google-country,
+body.dark .google-footer-links a{
+  color:#bdc1c6;
+}
+
+/* MOBILE */
+
+@media(max-width:700px){
+
+  .google-topbar{
+    height:56px;
+    min-height:56px;
+    padding:0 14px;
+  }
+
+  .google-top-left{
+    display:none;
+  }
+
+  .google-top-right{
+    margin-left:auto;
+    gap:12px;
+  }
+
+  .google-wordmark{
+    font-size:58px;
+    letter-spacing:-4px;
+    margin-bottom:28px;
+  }
+
+  .google-main{
+    padding:35px 16px 25px;
+  }
+
+  .google-search-box{
+    height:50px;
+  }
+
+  .google-buttons{
+    gap:8px;
+  }
+
+  .google-buttons button{
+    padding:9px 13px;
+  }
+
+  .goobrow-home-news{
+    width:94%;
+  }
+
+  .goobrow-news-grid{
+    grid-template-columns:1fr;
+  }
+
+  .goobrow-news-image-wrap{
+    height:190px;
+  }
+
+  .google-footer-links{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:15px;
+    padding:15px 20px;
+  }
+
+  .google-footer-links div{
+    flex-wrap:wrap;
+    gap:15px;
+  }
+
+  .google-country{
+    padding:15px 20px;
+  }
+}
+
 </style>
 
 <script>
