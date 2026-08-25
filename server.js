@@ -1509,7 +1509,6 @@ app.get("/api/news", async (req,res)=>{
     "latest Nigeria news";
 
   try{
-
     const rssUrl =
       "https://news.google.com/rss/search?q=" +
       encodeURIComponent(query) +
@@ -1554,25 +1553,104 @@ app.get("/api/news", async (req,res)=>{
         .replace(/&apos;/g,"'")
         .replace(/&lt;/g,"<")
         .replace(/&gt;/g,">")
+        .replace(/&nbsp;/g," ")
         .replace(/\s+/g," ")
         .trim();
     }
 
-    function firstImageFromHtml(html){
-
-      if(!html) return "";
-
-      const match =
-        String(html).match(
-          /<img[^>]+(?:src|data-src)=["']([^"']+)["']/i
-        );
-
-      return match ? match[1] : "";
+    function absoluteUrl(value, base){
+      try{
+        return new URL(value, base).href;
+      }catch{
+        return "";
+      }
     }
 
-    $("item").each(function(){
+    async function findArticleImage(articleUrl){
+      if(!articleUrl) return "";
 
-      if(results.length >= 12) return false;
+      try{
+        const page = await fetch(articleUrl,{
+          headers:{
+            "User-Agent":
+              "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
+            "Accept":
+              "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+          },
+          redirect:"follow"
+        });
+
+        if(!page.ok){
+          return "";
+        }
+
+        const html = await page.text();
+
+        if(!html || html.length < 500){
+          return "";
+        }
+
+        const $page = cheerio.load(html);
+
+        const candidates = [
+          $page('meta[property="og:image"]').attr("content"),
+          $page('meta[property="og:image:url"]').attr("content"),
+          $page('meta[name="twitter:image"]').attr("content"),
+          $page('meta[name="twitter:image:src"]').attr("content"),
+          $page('link[rel="image_src"]').attr("href")
+        ];
+
+        for(const candidate of candidates){
+          const image = absoluteUrl(candidate, page.url || articleUrl);
+          if(image){
+            return image;
+          }
+        }
+
+        let fallback = "";
+
+        $page("img").each(function(){
+          if(fallback) return;
+
+          const src =
+            $page(this).attr("src") ||
+            $page(this).attr("data-src") ||
+            $page(this).attr("data-lazy-src") ||
+            "";
+
+          const image = absoluteUrl(
+            src,
+            page.url || articleUrl
+          );
+
+          if(
+            image &&
+            !image.startsWith("data:") &&
+            !image.includes("logo") &&
+            !image.includes("icon") &&
+            !image.includes("avatar") &&
+            !image.includes("sprite")
+          ){
+            fallback = image;
+          }
+        });
+
+        return fallback;
+
+      }catch(error){
+        console.log(
+          "Article image lookup failed:",
+          articleUrl,
+          error.message
+        );
+        return "";
+      }
+    }
+
+    const items = [];
+
+    $("item").each(function(){
+      if(items.length >= 12) return false;
 
       const item = $(this);
 
@@ -1601,10 +1679,6 @@ app.get("/api/news", async (req,res)=>{
         item.find("enclosure").first().attr("url") ||
         "";
 
-      if(!image){
-        image = firstImageFromHtml(descriptionRaw);
-      }
-
       if(
         !title ||
         !link ||
@@ -1615,7 +1689,7 @@ app.get("/api/news", async (req,res)=>{
 
       seen.add(link);
 
-      results.push({
+      items.push({
         title,
         url:link,
         link,
@@ -1628,8 +1702,30 @@ app.get("/api/news", async (req,res)=>{
         publishedAt:pubDate,
         video:false
       });
-
     });
+
+    /*
+      Google News RSS often does not expose the publisher image.
+      Only look up article pages for stories that need an image.
+    */
+    for(const story of items){
+
+      if(story.image){
+        continue;
+      }
+
+      story.image =
+        await findArticleImage(story.url);
+
+      story.imageUrl =
+        story.image;
+
+      story.thumbnail =
+        story.image;
+
+    }
+
+    results.push(...items);
 
     console.log(
       "Google News:",
@@ -1637,6 +1733,13 @@ app.get("/api/news", async (req,res)=>{
       "->",
       results.length,
       "stories"
+    );
+
+    console.log(
+      "News images:",
+      results.filter(x => x.image).length,
+      "/",
+      results.length
     );
 
     res.json({
