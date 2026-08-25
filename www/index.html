@@ -2290,6 +2290,106 @@ body.dark .google-footer-links a{
 
 </style>
 
+<style>
+/* ============================================================
+   GOOBROW 2026 — NEWS POLISH
+   ============================================================ */
+
+.goobrow-home-news {
+  box-sizing: border-box;
+}
+
+.goobrow-news-card {
+  position: relative;
+  min-height: 100%;
+}
+
+.goobrow-news-image-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.goobrow-news-image-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.02),
+    rgba(0,0,0,0)
+  );
+}
+
+.goobrow-news-body {
+  min-width: 0;
+}
+
+.goobrow-news-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.goobrow-news-description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+@media (max-width:700px) {
+
+  .goobrow-news-card {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    min-height: 130px;
+  }
+
+  .goobrow-news-image-wrap {
+    height: 100%;
+    min-height: 130px;
+  }
+
+  .goobrow-news-body {
+    padding: 12px 13px;
+  }
+
+  .goobrow-news-title {
+    font-size: 15px;
+    -webkit-line-clamp: 4;
+  }
+
+  .goobrow-news-description {
+    display: none;
+  }
+
+}
+
+@media (max-width:430px) {
+
+  .goobrow-news-card {
+    grid-template-columns: 110px 1fr;
+  }
+
+  .goobrow-news-image-wrap {
+    min-height: 110px;
+  }
+
+  .goobrow-news-source {
+    font-size: 11px;
+  }
+
+  .goobrow-news-title {
+    font-size: 14px;
+  }
+
+}
+</style>
+
+
+
 <script>
 /* ===== GOOGLE SEARCH HOMEPAGE ===== */
 
@@ -2903,6 +3003,330 @@ searchInput.addEventListener("keydown",function(e){
    googleSearch();
  }
 });
+
+</script>
+
+
+
+<script>
+/* ============================================================
+   GOOBROW 2026 — LIVE HOMEPAGE NEWS
+   ============================================================ */
+
+async function loadGoobrowHomeNews(forceRefresh = false) {
+
+  const status = document.getElementById("goobrowNewsStatus");
+  const grid = document.getElementById("goobrowNewsGrid");
+
+  if (!status || !grid) return;
+
+  status.textContent = "Loading latest news...";
+  grid.innerHTML = "";
+
+  try {
+
+    const response = await fetch(
+      "/api/news?q=" +
+      encodeURIComponent("latest Nigeria news") +
+      (forceRefresh ? "&t=" + Date.now() : "")
+    );
+
+    if (!response.ok) {
+      throw new Error("News request failed");
+    }
+
+    const data = await response.json();
+    const stories = Array.isArray(data.results)
+      ? data.results
+      : [];
+
+    if (!stories.length) {
+      status.textContent =
+        "Latest news is temporarily unavailable.";
+      return;
+    }
+
+    status.textContent =
+      "Latest Nigeria news";
+
+    stories.forEach((story) => {
+
+      const card = document.createElement("article");
+      card.className = "goobrow-news-card";
+
+      const image =
+        story.image ||
+        story.imageUrl ||
+        story.thumbnail ||
+        "";
+
+      const title =
+        story.title ||
+        "Untitled news story";
+
+      const source =
+        story.publisher ||
+        story.source ||
+        "Google News";
+
+      const description =
+        story.description || "";
+
+      const date =
+        story.publishedAt || "";
+
+      const safeUrl =
+        story.url ||
+        story.link ||
+        "#";
+
+      card.innerHTML = `
+        <div class="goobrow-news-image-wrap">
+
+          ${
+            image
+              ? `
+                <img
+                  class="goobrow-news-image"
+                  src="${escapeGoobrowHtml(image)}"
+                  alt=""
+                  loading="lazy"
+                  onerror="this.style.display='none'"
+                >
+              `
+              : `
+                <div
+                  style="
+                    width:100%;
+                    height:100%;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    color:#5f6368;
+                    font-size:34px;
+                  "
+                >
+                  📰
+                </div>
+              `
+          }
+
+        </div>
+
+        <div class="goobrow-news-body">
+
+          <div class="goobrow-news-source">
+            ${escapeGoobrowHtml(source)}
+            ${
+              date
+                ? " • " + escapeGoobrowHtml(formatGoobrowDate(date))
+                : ""
+            }
+          </div>
+
+          <h3 class="goobrow-news-title">
+            ${escapeGoobrowHtml(title)}
+          </h3>
+
+          ${
+            description
+              ? `
+                <div class="goobrow-news-description">
+                  ${escapeGoobrowHtml(
+                    description
+                      .replace(/\s+/g, " ")
+                      .slice(0, 180)
+                  )}
+                </div>
+              `
+              : ""
+          }
+
+        </div>
+      `;
+
+      card.addEventListener("click", () => {
+
+        if (
+          safeUrl &&
+          safeUrl !== "#"
+        ) {
+
+          if (
+            window.Capacitor &&
+            window.Capacitor.Plugins &&
+            window.Capacitor.Plugins.GoobrowBrowser
+          ) {
+
+            window.Capacitor.Plugins.GoobrowBrowser
+              .openBrowser({ url: safeUrl })
+              .catch(() => {
+                window.open(
+                  safeUrl,
+                  "_blank"
+                );
+              });
+
+          } else {
+
+            window.open(
+              safeUrl,
+              "_blank"
+            );
+
+          }
+
+        }
+
+      });
+
+      grid.appendChild(card);
+
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Goobrow homepage news error:",
+      error
+    );
+
+    status.textContent =
+      "Unable to load latest news. Tap Refresh to try again.";
+
+  }
+
+}
+
+
+/* ---------- HTML ESCAPING ---------- */
+
+function escapeGoobrowHtml(value) {
+
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+}
+
+
+/* ---------- NEWS DATE ---------- */
+
+function formatGoobrowDate(value) {
+
+  try {
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+
+    return date.toLocaleDateString(
+      "en-NG",
+      {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+      }
+    );
+
+  } catch {
+
+    return value;
+
+  }
+
+}
+
+
+/* ============================================================
+   GOOBROW ACADEMIC SEARCH
+   ============================================================ */
+
+if (
+  typeof window.academicSearch !== "function"
+) {
+
+  window.academicSearch = function () {
+
+    const input =
+      document.querySelector(
+        ".google-search-box input"
+      );
+
+    const query =
+      input && input.value.trim()
+        ? input.value.trim()
+        : "";
+
+    if (!query) {
+
+      if (input) {
+        input.focus();
+      }
+
+      return false;
+
+    }
+
+    const academicUrl =
+      "https://scholar.google.com/scholar?q=" +
+      encodeURIComponent(query);
+
+    if (
+      window.Capacitor &&
+      window.Capacitor.Plugins &&
+      window.Capacitor.Plugins.GoobrowBrowser
+    ) {
+
+      window.Capacitor.Plugins.GoobrowBrowser
+        .openBrowser({
+          url: academicUrl
+        })
+        .catch(() => {
+          window.open(
+            academicUrl,
+            "_blank"
+          );
+        });
+
+    } else {
+
+      window.open(
+        academicUrl,
+        "_blank"
+      );
+
+    }
+
+    return false;
+
+  };
+
+}
+
+
+/* ============================================================
+   AUTOMATIC NEWS LOAD
+   ============================================================ */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  function () {
+
+    setTimeout(
+      function () {
+        loadGoobrowHomeNews(false);
+      },
+      250
+    );
+
+  }
+);
 
 </script>
 
