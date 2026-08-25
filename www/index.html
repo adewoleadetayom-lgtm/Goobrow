@@ -559,6 +559,48 @@ html, body {
 }
 </style>
 
+
+<style id="goobrow-2026-news-image-final-fix">
+.goobrow-news-image-wrap{
+  position:relative;
+  width:100%;
+  height:190px;
+  overflow:hidden;
+  background:#f1f3f4;
+}
+
+.goobrow-news-image{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+}
+
+.news-image-fallback{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:34px;
+  color:#5f6368;
+  background:#f1f3f4;
+}
+
+body.dark .goobrow-news-image-wrap,
+body.dark .news-image-fallback{
+  background:#303134;
+  color:#bdc1c6;
+}
+
+@media(max-width:700px){
+  .goobrow-news-image-wrap{
+    height:170px;
+  }
+}
+</style>
+
 </head>
 
 
@@ -3428,16 +3470,16 @@ async function loadGoobrowHomeNews(forceRefresh = false) {
 
       card.innerHTML = `
         <div class="goobrow-news-image-wrap">
-          ${
-            image
+          ${image
               ? `<img
                    class="goobrow-news-image"
-                   src="${escapeGoobrowHtml(image)}"
-                   alt=""
+                   src="${image}"
+                   alt="${escapeGoobrowHtml(title)}"
                    loading="lazy"
-                   onerror="this.parentElement.innerHTML='<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:34px;color:#5f6368">📰</div>'"
+                   referrerpolicy="no-referrer"
+                   onerror="this.onerror=null;this.style.display='none';this.parentElement.classList.add('news-image-fallback');"
                  >`
-              : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:34px;color:#5f6368">📰</div>`
+              : `<div class="news-image-fallback">📰</div>`
           }
         </div>
 
