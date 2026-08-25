@@ -684,6 +684,125 @@ body.dark .goobrow-language-list button:hover{
 }
 </style>
 
+
+<style id="goobrow-2026-news-card-robust-fix">
+.goobrow-news-grid{
+  width:100%;
+  max-width:1200px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:18px;
+}
+
+.goobrow-news-card{
+  min-width:0;
+  width:100%;
+  overflow:hidden;
+  border:1px solid #dadce0;
+  border-radius:14px;
+  background:#fff;
+  cursor:pointer;
+  box-sizing:border-box;
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+
+.goobrow-news-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 3px 12px rgba(60,64,67,.18);
+}
+
+.goobrow-news-image-wrap{
+  position:relative;
+  width:100%;
+  height:190px;
+  overflow:hidden;
+  background:#f1f3f4;
+}
+
+.goobrow-news-image{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+}
+
+.news-image-fallback{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:36px;
+  background:#f1f3f4;
+  color:#5f6368;
+}
+
+.goobrow-news-body{
+  width:100%;
+  padding:15px;
+  box-sizing:border-box;
+}
+
+.goobrow-news-source{
+  color:#5f6368;
+  font-size:12px;
+  margin-bottom:7px;
+}
+
+.goobrow-news-title{
+  color:#202124;
+  font-size:17px;
+  line-height:1.35;
+  font-weight:500;
+  margin:0 0 9px;
+}
+
+.goobrow-news-description{
+  color:#5f6368;
+  font-size:13px;
+  line-height:1.45;
+}
+
+body.dark .goobrow-news-card{
+  background:#202124;
+  border-color:#5f6368;
+}
+
+body.dark .goobrow-news-title{
+  color:#e8eaed;
+}
+
+body.dark .goobrow-news-image-wrap,
+body.dark .news-image-fallback{
+  background:#303134;
+  color:#bdc1c6;
+}
+
+body.dark .goobrow-news-source,
+body.dark .goobrow-news-description{
+  color:#bdc1c6;
+}
+
+@media(max-width:900px){
+  .goobrow-news-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:600px){
+  .goobrow-news-grid{
+    grid-template-columns:1fr;
+    gap:14px;
+  }
+
+  .goobrow-news-image-wrap{
+    height:190px;
+  }
+}
+</style>
+
 </head>
 
 
@@ -3519,6 +3638,7 @@ async function loadGoobrowHomeNews(forceRefresh = false) {
     }
 
     const data = await response.json();
+
     const stories = Array.isArray(data.results)
       ? data.results
       : [];
@@ -3534,62 +3654,102 @@ async function loadGoobrowHomeNews(forceRefresh = false) {
       const card = document.createElement("article");
       card.className = "goobrow-news-card";
 
-      const title = story.title || "News";
+      const title =
+        story.title ||
+        "News";
+
       const source =
         story.publisher ||
         story.source ||
         "Google News";
-      const date = story.publishedAt || "";
-      const description = story.description || "";
+
+      const date =
+        story.publishedAt ||
+        "";
+
+      const description =
+        story.description ||
+        "";
+
       const image =
         story.image ||
         story.imageUrl ||
         story.thumbnail ||
         "";
-      const url =
+
+      const articleUrl =
         story.url ||
         story.link ||
         "";
 
-      card.innerHTML = `
-        <div class="goobrow-news-image-wrap">
-          ${image
-              ? `<img
-                   class="goobrow-news-image"
-                   src="${image}"
-                   alt="${escapeGoobrowHtml(title)}"
-                   loading="lazy"
-                   referrerpolicy="no-referrer"
-                   onerror="this.onerror=null;this.style.display='none';this.parentElement.classList.add('news-image-fallback');"
-                 >`
-              : `<div class="news-image-fallback">📰</div>`
-          }
-        </div>
+      /* IMAGE */
+      const imageWrap = document.createElement("div");
+      imageWrap.className = "goobrow-news-image-wrap";
 
-        <div class="goobrow-news-body">
-          <div class="goobrow-news-source">
-            ${escapeGoobrowHtml(source)}
-            ${date ? " • " + escapeGoobrowHtml(formatGoobrowDate(date)) : ""}
-          </div>
+      if (image) {
+        const img = document.createElement("img");
 
-          <h3 class="goobrow-news-title">
-            ${escapeGoobrowHtml(title)}
-          </h3>
+        img.className = "goobrow-news-image";
+        img.src = image;
+        img.alt = title;
+        img.loading = "lazy";
+        img.referrerPolicy = "no-referrer";
 
-          ${
-            description
-              ? `<div class="goobrow-news-description">
-                   ${escapeGoobrowHtml(
-                     description.replace(/\s+/g, " ").slice(0, 180)
-                   )}
-                 </div>`
-              : ""
-          }
-        </div>
-      `;
+        img.onerror = function() {
+          this.onerror = null;
+          this.style.display = "none";
 
+          const fallback = document.createElement("div");
+          fallback.className = "news-image-fallback";
+          fallback.textContent = "📰";
+
+          imageWrap.appendChild(fallback);
+        };
+
+        imageWrap.appendChild(img);
+      } else {
+        const fallback = document.createElement("div");
+        fallback.className = "news-image-fallback";
+        fallback.textContent = "📰";
+        imageWrap.appendChild(fallback);
+      }
+
+      /* BODY */
+      const body = document.createElement("div");
+      body.className = "goobrow-news-body";
+
+      const sourceEl = document.createElement("div");
+      sourceEl.className = "goobrow-news-source";
+
+      sourceEl.textContent =
+        source +
+        (date ? " • " + formatGoobrowDate(date) : "");
+
+      const titleEl = document.createElement("h3");
+      titleEl.className = "goobrow-news-title";
+      titleEl.textContent = title;
+
+      body.appendChild(sourceEl);
+      body.appendChild(titleEl);
+
+      if (description) {
+        const descriptionEl = document.createElement("div");
+        descriptionEl.className = "goobrow-news-description";
+
+        descriptionEl.textContent =
+          description
+            .replace(/\s+/g, " ")
+            .slice(0, 180);
+
+        body.appendChild(descriptionEl);
+      }
+
+      card.appendChild(imageWrap);
+      card.appendChild(body);
+
+      /* OPEN NEWS ARTICLE */
       card.addEventListener("click", function() {
-        if (!url) return;
+        if (!articleUrl) return;
 
         if (
           window.Capacitor &&
@@ -3597,12 +3757,12 @@ async function loadGoobrowHomeNews(forceRefresh = false) {
           window.Capacitor.Plugins.GoobrowBrowser
         ) {
           window.Capacitor.Plugins.GoobrowBrowser
-            .openBrowser({ url: url })
+            .openBrowser({ url: articleUrl })
             .catch(function() {
-              window.open(url, "_blank");
+              window.open(articleUrl, "_blank");
             });
         } else {
-          window.open(url, "_blank");
+          window.open(articleUrl, "_blank");
         }
       });
 
@@ -3611,6 +3771,7 @@ async function loadGoobrowHomeNews(forceRefresh = false) {
 
   } catch (error) {
     console.error("Goobrow homepage news error:", error);
+
     status.textContent =
       "Unable to load latest news. Tap Refresh to try again.";
   }
