@@ -1504,62 +1504,47 @@ app.post("/api/ai", async (req,res)=>{
 
 
 app.get("/api/news", async (req,res)=>{
-  const query=String(req.query.q||"latest news").trim()||"latest news";
+  const query =
+    String(req.query.q || "latest Nigeria news").trim() ||
+    "latest Nigeria news";
 
   try{
 
-    const sources=[
-      "https://news.google.com/rss/search?q="+encodeURIComponent(query)+"&hl=en-NG&gl=NG&ceid=NG:en",
-      "https://www.google.com/search?tbm=nws&q="+encodeURIComponent(query)
-    ];
+    const rssUrl =
+      "https://news.google.com/rss/search?q=" +
+      encodeURIComponent(query) +
+      "&hl=en-NG&gl=NG&ceid=NG:en";
 
-    let html="";
-    let sourceUsed="";
-
-    for(const url of sources){
-
-      try{
-
-        const response=await fetch(url,{
-          headers:{
-            "User-Agent":
-              "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
-            "Accept":
-              "application/rss+xml, application/xml, text/xml, text/html;q=0.9,*/*;q=0.8"
-          }
-        });
-
-        if(response.ok){
-
-          const text=await response.text();
-
-          if(text && text.length>500){
-
-            html=text;
-            sourceUsed=url;
-            break;
-
-          }
-
-        }
-
-      }catch(error){
-
-        console.log(
-          "News source failed:",
-          error.message
-        );
-
+    const response = await fetch(rssUrl,{
+      headers:{
+        "User-Agent":
+          "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36",
+        "Accept":
+          "application/rss+xml, application/xml, text/xml;q=0.9,*/*;q=0.8"
       }
+    });
 
+    if(!response.ok){
+      throw new Error(
+        "Google News returned HTTP " + response.status
+      );
     }
 
-    const results=[];
-    const seen=new Set();
+    const xml = await response.text();
+
+    if(!xml || xml.length < 300){
+      throw new Error("Google News returned an empty response");
+    }
+
+    const $ = cheerio.load(xml,{
+      xmlMode:true
+    });
+
+    const results = [];
+    const seen = new Set();
 
     function clean(value){
-
-      return String(value||"")
+      return String(value || "")
         .replace(/<!\[CDATA\[/g,"")
         .replace(/\]\]>/g,"")
         .replace(/<[^>]*>/g," ")
@@ -1569,165 +1554,114 @@ app.get("/api/news", async (req,res)=>{
         .replace(/&apos;/g,"'")
         .replace(/&lt;/g,"<")
         .replace(/&gt;/g,">")
-        .replace(/&nbsp;/g," ")
         .replace(/\s+/g," ")
         .trim();
-
     }
 
-    /*
-      Google News RSS
-    */
+    function firstImageFromHtml(html){
 
-    if(
-      sourceUsed.includes("news.google.com/rss")
-    ){
+      if(!html) return "";
 
-      const items=
-        html.match(/<item[\s\S]*?<\/item>/gi)||[];
+      const match =
+        String(html).match(
+          /<img[^>]+(?:src|data-src)=["']([^"']+)["']/i
+        );
 
-      for(const item of items){
+      return match ? match[1] : "";
+    }
 
-        if(results.length>=8) break;
+    $("item").each(function(){
 
-        const titleMatch=
-          item.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+      if(results.length >= 12) return false;
 
-        const linkMatch=
-          item.match(/<link[^>]*>([\s\S]*?)<\/link>/i);
+      const item = $(this);
 
-        const descriptionMatch=
-          item.match(/<description[^>]*>([\s\S]*?)<\/description>/i);
+      const title =
+        clean(item.find("title").first().text());
 
-        const pubDateMatch=
-          item.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/i);
+      const link =
+        clean(item.find("link").first().text());
 
-        if(!titleMatch || !linkMatch) continue;
+      const descriptionRaw =
+        item.find("description").first().text() || "";
 
-        const title=clean(titleMatch[1]);
-        const url=clean(linkMatch[1]);
-        const description=
-          clean(descriptionMatch ? descriptionMatch[1] : "");
+      const description =
+        clean(descriptionRaw);
 
-        if(!title || !url || seen.has(url)) continue;
+      const pubDate =
+        clean(item.find("pubDate").first().text());
 
-        seen.add(url);
+      const source =
+        clean(item.find("source").first().text()) ||
+        "Google News";
 
-        /*
-          Google News RSS usually gives the article image
-          through media:content or enclosure.
-        */
+      let image =
+        item.find("media\\:content").first().attr("url") ||
+        item.find("media\\:thumbnail").first().attr("url") ||
+        item.find("enclosure").first().attr("url") ||
+        "";
 
-        const mediaMatch=
-          item.match(
-            /<media:content[^>]+url=["']([^"']+)["']/i
-          );
-
-        const enclosureMatch=
-          item.match(
-            /<enclosure[^>]+url=["']([^"']+)["']/i
-          );
-
-        const image=
-          mediaMatch
-            ? mediaMatch[1]
-            : enclosureMatch
-              ? enclosureMatch[1]
-              : "";
-
-        results.push({
-          title,
-          url,
-          description,
-          image,
-          publishedAt:
-            pubDateMatch
-              ? clean(pubDateMatch[1])
-              : ""
-        });
-
+      if(!image){
+        image = firstImageFromHtml(descriptionRaw);
       }
 
-    }
-
-    /*
-      Google News HTML fallback
-    */
-
-    if(!results.length){
-
-      const blocks=
-        html.match(
-          /<article[\s\S]*?<\/article>/gi
-        ) || [];
-
-      for(const block of blocks){
-
-        if(results.length>=8) break;
-
-        const titleMatch=
-          block.match(
-            /<a[^>]*>([\s\S]{15,300}?)<\/a>/i
-          );
-
-        const linkMatch=
-          block.match(
-            /<a[^>]+href=["']([^"']+)["']/i
-          );
-
-        const imageMatch=
-          block.match(
-            /<img[^>]+src=["']([^"']+)["']/i
-          );
-
-        if(!titleMatch || !linkMatch) continue;
-
-        const title=clean(titleMatch[1]);
-        let url=linkMatch[1];
-
-        if(url.startsWith("/")){
-          url="https://www.google.com"+url;
-        }
-
-        if(!title || !url || seen.has(url)) continue;
-
-        seen.add(url);
-
-        results.push({
-          title,
-          url,
-          description:"",
-          image:imageMatch
-            ? imageMatch[1]
-            : "",
-          publishedAt:""
-        });
-
+      if(
+        !title ||
+        !link ||
+        seen.has(link)
+      ){
+        return;
       }
 
-    }
+      seen.add(link);
+
+      results.push({
+        title,
+        url:link,
+        link,
+        description,
+        source,
+        publisher:source,
+        image,
+        imageUrl:image,
+        thumbnail:image,
+        publishedAt:pubDate,
+        video:false
+      });
+
+    });
+
+    console.log(
+      "Google News:",
+      query,
+      "->",
+      results.length,
+      "stories"
+    );
 
     res.json({
-      engine:"Goobrow Live News",
+      engine:"Google News",
       query,
+      count:results.length,
       results
     });
 
   }catch(error){
 
     console.error(
-      "Goobrow news failed:",
+      "Goobrow Google News failed:",
       error.message
     );
 
-    res.json({
-      engine:"Goobrow Live News",
+    res.status(200).json({
+      engine:"Google News",
       query,
-      results:[]
+      count:0,
+      results:[],
+      error:"Google News is temporarily unavailable"
     });
 
   }
-
 });
 
 app.get("/api/videos", async (req,res)=>{
