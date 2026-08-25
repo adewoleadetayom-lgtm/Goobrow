@@ -803,6 +803,196 @@ body.dark .goobrow-news-description{
 }
 </style>
 
+
+<style id="goobrow-android16-design">
+/* ============================================================
+   GOOBROW — ANDROID 16 INSPIRED DESIGN
+   Visual layer only: keeps existing functionality intact.
+   ============================================================ */
+
+:root{
+  --g16-bg:#f8f9fa;
+  --g16-surface:rgba(255,255,255,.92);
+  --g16-text:#202124;
+  --g16-muted:#5f6368;
+  --g16-border:rgba(60,64,67,.14);
+  --g16-shadow:0 2px 12px rgba(60,64,67,.10);
+  --g16-radius:24px;
+}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  background:var(--g16-bg);
+  color:var(--g16-text);
+  transition:background .25s ease,color .25s ease;
+}
+
+/* Modern Android-style top bar */
+.goobrow-2026-topbar{
+  min-height:64px !important;
+  padding:0 18px !important;
+  border-bottom:1px solid var(--g16-border) !important;
+  background:rgba(248,249,250,.86) !important;
+  box-shadow:0 1px 8px rgba(60,64,67,.08) !important;
+  backdrop-filter:blur(22px) saturate(150%) !important;
+  -webkit-backdrop-filter:blur(22px) saturate(150%) !important;
+}
+
+/* Rounded modern controls */
+.goobrow-top-btn{
+  min-height:44px !important;
+  border-radius:22px !important;
+  transition:transform .18s ease,background .18s ease,box-shadow .18s ease !important;
+}
+
+.goobrow-top-btn:hover{
+  transform:translateY(-1px);
+}
+
+/* Google-style search becomes Android-modern */
+.google-search-box{
+  min-height:56px !important;
+  height:56px !important;
+  border-radius:28px !important;
+  border:1px solid var(--g16-border) !important;
+  background:var(--g16-surface) !important;
+  box-shadow:var(--g16-shadow) !important;
+  padding:0 10px 0 16px !important;
+  backdrop-filter:blur(18px) !important;
+  -webkit-backdrop-filter:blur(18px) !important;
+  transition:box-shadow .2s ease,transform .2s ease !important;
+}
+
+.google-search-box:focus-within{
+  transform:translateY(-1px);
+  box-shadow:0 4px 20px rgba(60,64,67,.16) !important;
+}
+
+.google-search-box input{
+  font-size:16px !important;
+}
+
+.google-voice,
+.google-submit{
+  width:42px !important;
+  height:42px !important;
+  border-radius:50% !important;
+  transition:background .18s ease,transform .18s ease !important;
+}
+
+.google-voice:hover,
+.google-submit:hover{
+  transform:scale(1.05);
+}
+
+/* Modern buttons */
+.google-buttons button{
+  min-height:44px !important;
+  padding:0 18px !important;
+  border-radius:22px !important;
+  border:1px solid var(--g16-border) !important;
+  transition:transform .18s ease,box-shadow .18s ease !important;
+}
+
+.google-buttons button:hover{
+  transform:translateY(-1px);
+  box-shadow:0 3px 10px rgba(60,64,67,.12);
+}
+
+/* News cards */
+.goobrow-news-card{
+  border-radius:24px !important;
+  border:1px solid var(--g16-border) !important;
+  box-shadow:0 2px 12px rgba(60,64,67,.08) !important;
+  overflow:hidden !important;
+  transition:transform .2s ease,box-shadow .2s ease !important;
+}
+
+.goobrow-news-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(60,64,67,.14) !important;
+}
+
+/* Suggestions */
+.google-suggestions{
+  border-radius:0 0 20px 20px !important;
+  overflow:hidden !important;
+  box-shadow:0 8px 24px rgba(60,64,67,.14) !important;
+}
+
+/* Mobile */
+@media(max-width:600px){
+  .goobrow-2026-topbar{
+    padding:0 10px !important;
+  }
+
+  .google-search-form{
+    width:min(94vw,584px) !important;
+  }
+
+  .google-search-box{
+    min-height:58px !important;
+    height:58px !important;
+  }
+
+  .google-buttons{
+    gap:8px !important;
+  }
+
+  .google-buttons button{
+    padding:0 14px !important;
+    font-size:13px !important;
+  }
+
+  .goobrow-news-card{
+    border-radius:20px !important;
+  }
+}
+
+/* Dark mode */
+body.dark{
+  --g16-bg:#101114;
+  --g16-surface:rgba(30,31,34,.92);
+  --g16-text:#f1f3f4;
+  --g16-muted:#bdc1c6;
+  --g16-border:rgba(255,255,255,.12);
+  --g16-shadow:0 2px 14px rgba(0,0,0,.30);
+}
+
+body.dark .goobrow-2026-topbar{
+  background:rgba(16,17,20,.86) !important;
+}
+
+body.dark .google-search-box{
+  background:var(--g16-surface) !important;
+  border-color:var(--g16-border) !important;
+}
+
+body.dark .google-search-box input{
+  color:var(--g16-text) !important;
+}
+
+body.dark .google-voice:hover,
+body.dark .google-submit:hover{
+  background:rgba(255,255,255,.10) !important;
+}
+
+/* Respect reduced-motion accessibility */
+@media(prefers-reduced-motion:reduce){
+  *,
+  *::before,
+  *::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
+
 </head>
 
 
