@@ -18,13 +18,10 @@ android {
     }
     signingConfigs {
         release {
-            def storeFilePath = System.getenv("GOOBROW_STORE_FILE")
-            if (storeFilePath) {
-                storeFile file(storeFilePath)
-                storePassword System.getenv("GOOBROW_STORE_PASSWORD")
-                keyAlias System.getenv("GOOBROW_KEY_ALIAS")
-                keyPassword System.getenv("GOOBROW_KEY_PASSWORD")
-            }
+            storeFile file(System.getenv("GOOBROW_STORE_FILE"))
+            storePassword System.getenv("GOOBROW_STORE_PASSWORD")
+            keyAlias System.getenv("GOOBROW_KEY_ALIAS")
+            keyPassword System.getenv("GOOBROW_KEY_PASSWORD")
         }
     }
 
