@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Goobrow Images</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  color:#202124;
+  background:#fff;
+}
+.top{
+  padding:16px 20px;
+  border-bottom:1px solid #eee;
+}
+.header{
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+.menu{
+  font-size:28px;
+  text-decoration:none;
+  color:#333;
+}
+.logo{
+  font-size:30px;
+  font-weight:700;
+  letter-spacing:-2px;
+  text-decoration:none;
+}
+.logo span:nth-child(1){color:#4285f4}
+.logo span:nth-child(2){color:#ea4335}
+.logo span:nth-child(3){color:#fbbc05}
+.logo span:nth-child(4){color:#4285f4}
+.logo span:nth-child(5){color:#34a853}
+.logo span:nth-child(6){color:#ea4335}
+.logo span:nth-child(7){color:#4285f4}
+
+.search{
+  margin:18px auto 0;
+  width:min(700px,100%);
+  height:48px;
+  border:1px solid #dfe1e5;
+  border-radius:25px;
+  display:flex;
+  align-items:center;
+  padding:0 16px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+}
+.search input{
+  flex:1;
+  border:0;
+  outline:0;
+  font-size:16px;
+}
+.search button{
+  border:0;
+  background:none;
+  font-size:22px;
+  cursor:pointer;
+}
+.content{
+  width:min(1100px,94%);
+  margin:28px auto 60px;
+}
+.title{
+  font-size:26px;
+  margin-bottom:22px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:18px;
+}
+.card{
+  border:1px solid #e0e0e0;
+  border-radius:12px;
+  overflow:hidden;
+  background:#fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+}
+.card img{
+  width:100%;
+  height:180px;
+  object-fit:cover;
+  display:block;
+}
+.card a{
+  display:block;
+  padding:12px;
+  color:#1a0dab;
+  text-decoration:none;
+  font-size:14px;
+}
+.card a:hover{text-decoration:underline}
+.message{
+  color:#70757a;
+  font-size:16px;
+}
+@media(max-width:600px){
+  .grid{
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+  }
+  .card img{height:145px}
+}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="header">
+    <a class="menu" href="index.html">☰</a>
+    <a class="logo" href="index.html">
+      <span>G</span><span>o</span><span>o</span><span>b</span><span>r</span><span>o</span><span>w</span>
+    </a>
+  </div>
+
+  <div class="search">
+    <input id="searchInput" placeholder="Search images with Goobrow">
+    <button onclick="searchImages()">🔎</button>
+  </div>
+</div>
+
+<div class="content">
+  <h1 class="title">🖼️ Goobrow Images</h1>
+  <div id="message" class="message">Search for images.</div>
+  <div id="grid" class="grid"></div>
+</div>
+
+<script>
+const input = document.getElementById("searchInput");
+const grid = document.getElementById("grid");
+const message = document.getElementById("message");
+
+const params = new URLSearchParams(location.search);
+const query = params.get("q") || "";
+
+input.value = query;
+
+input.addEventListener("keydown", e => {
+  if(e.key === "Enter") searchImages();
+});
+
+function searchImages(){
+  const q = input.value.trim();
+  if(!q) return;
+
+  location.href =
+    "images.html?q=" + encodeURIComponent(q);
+}
+
+function escapeHtml(text){
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+async function loadImages(){
+  if(!query) return;
+
+  message.textContent = "";
+  grid.innerHTML = "";
+
+  try{
+    const response = await fetch(
+      "/api/images?q=" + encodeURIComponent(query)
+    );
+
+    if(!response.ok){
+      throw new Error("Image search failed");
+    }
+
+    const data = await response.json();
+
+    if(!data.results || data.results.length === 0){
+      message.textContent =
+        "No images found for " + query;
+      return;
+    }
+
+    message.textContent =
+      data.results.length + " images found for " + query;
+
+    data.results.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      card.innerHTML =
+        '<img src="' + escapeHtml(item.image) +
+        '" alt="' + escapeHtml(item.title) +
+        '" loading="lazy">' +
+        '<a href="' + escapeHtml(item.source) +
+        '" target="_blank" rel="noopener">' +
+        escapeHtml(item.title) +
+        '</a>';
+
+      grid.appendChild(card);
+    });
+
+  }catch(error){
+    console.error(error);
+    message.textContent =
+      "Goobrow could not load image results.";
+  }
+}
+
+loadImages();
+</script>
+
+</body>
+</html>

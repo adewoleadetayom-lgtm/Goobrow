@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Goobrow Search</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;color:#202124;background:#fff}
+.header{padding:18px 20px;border-bottom:1px solid #eee}
+.logo{font-size:30px;font-weight:700;text-decoration:none;letter-spacing:-2px}
+.logo span:nth-child(1){color:#4285f4}.logo span:nth-child(2){color:#ea4335}
+.logo span:nth-child(3){color:#fbbc05}.logo span:nth-child(4){color:#4285f4}
+.logo span:nth-child(5){color:#34a853}.logo span:nth-child(6){color:#ea4335}
+.logo span:nth-child(7){color:#4285f4}
+.search{margin-top:15px;width:min(700px,100%);height:48px;border:1px solid #dfe1e5;border-radius:25px;display:flex;align-items:center;padding:0 16px}
+.search input{flex:1;border:0;outline:0;font-size:16px}
+.search button{border:0;background:none;font-size:20px;cursor:pointer}
+.tabs{width:min(700px,92%);margin:18px 6%;display:flex;gap:25px;border-bottom:1px solid #eee}
+.tabs a{padding:12px 3px;text-decoration:none;color:#555}
+.tabs a.active{color:#1a73e8;border-bottom:3px solid #1a73e8}
+.results{width:min(750px,92%);margin:25px 6% 80px}
+.result{margin-bottom:28px}
+.result h2{font-size:20px;font-weight:500;margin:0 0 5px}
+.result h2 a{color:#1a0dab;text-decoration:none}
+.result h2 a:hover{text-decoration:underline}
+.url{color:#188038;font-size:14px;margin-bottom:6px;word-break:break-all}
+.description{color:#4d5156;line-height:1.5}
+.loading{color:#70757a}
+.imageGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.imageCard{border:1px solid #eee;border-radius:10px;overflow:hidden;background:white}
+.imageCard img{display:block;width:100%;height:170px;object-fit:cover}
+.imageTitle{padding:8px;font-size:13px}
+.newsItem{display:flex;gap:15px;padding:15px 0;border-bottom:1px solid #eee}
+.newsThumb{width:140px;height:90px;border-radius:8px;background:#f1f3f4;display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0}
+.newsTitle{font-size:19px;margin:0 0 8px}
+.newsTitle a{color:#1a0dab;text-decoration:none}
+.newsDate{font-size:12px;color:#777}
+@media(max-width:700px){
+ .results{margin-left:5%;width:90%}
+ .imageGrid{grid-template-columns:repeat(2,1fr)}
+ .imageCard img{height:140px}
+ .newsThumb{width:100px;height:70px}
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+
+<a href="index.html" class="logo">
+<span>G</span><span>o</span><span>o</span><span>b</span><span>r</span><span>o</span><span>w</span>
+</a>
+
+<div class="search">
+<input id="searchInput" placeholder="Search with Goobrow">
+<button id="searchButton">🔎</button>
+</div>
+
+</div>
+
+<div class="tabs">
+<a id="webTab">Web</a>
+<a id="imageTab">Images</a>
+<a id="newsTab">News</a>
+</div>
+
+<div class="results" id="results">
+<p class="loading" style="display:none"></p>
+</div>
+
+<script>
+
+const params=new URLSearchParams(location.search);
+const query=params.get("q")||"";
+const mode=params.get("mode")||"web";
+
+const input=document.getElementById("searchInput");
+const results=document.getElementById("results");
+
+input.value=query;
+
+document.getElementById("webTab").href="results.html?q="+encodeURIComponent(query)+"&mode=web";
+document.getElementById("imageTab").href="results.html?q="+encodeURIComponent(query)+"&mode=images";
+document.getElementById("newsTab").href="results.html?q="+encodeURIComponent(query)+"&mode=news";
+
+if(mode==="images"){
+ document.getElementById("imageTab").className="active";
+}
+
+if(mode==="news"){
+ document.getElementById("newsTab").className="active";
+}
+
+if(mode==="web"){
+ document.getElementById("webTab").className="active";
+}
+
+document.getElementById("searchButton").onclick=doSearch;
+
+input.addEventListener("keydown",e=>{
+ if(e.key==="Enter")doSearch();
+});
+
+function doSearch(){
+
+ const q=input.value.trim();
+
+ if(!q)return;
+
+ location.href="results.html?q="+encodeURIComponent(q)+"&mode="+mode;
+
+}
+
+function escapeHtml(text){
+
+ const div=document.createElement("div");
+
+ div.textContent=String(text||"");
+
+ return div.innerHTML;
+
+}
+
+async function loadWeb(){
+
+ try{
+
+  const response=await fetch(
+   "http://localhost:3001/api/search?q="+encodeURIComponent(query)
+  );
+
+  const data=await response.json();
+
+  results.innerHTML="";
+
+  if(!data.results||data.results.length===0){
+
+   results.innerHTML="<p>No results found for <b>"+
+   escapeHtml(query)+"</b>.</p>";
+
+   return;
+
+  }
+
+  data.results.forEach(item=>{
+
+   const div=document.createElement("div");
+
+   div.className="result";
+
+   div.innerHTML=
+   "<h2><a href=\""+
+   escapeHtml(item.url)+
+   "\" target=\"_blank\" rel=\"noopener\">"+
+   escapeHtml(item.title)+
+   "</a></h2>"+
+   "<div class=\"url\">"+
+   escapeHtml(item.url)+
+   "</div>"+
+   "<div class=\"description\">"+
+   escapeHtml(item.description)+
+   "</div>";
+
+   results.appendChild(div);
+
+  });
+
+ }catch(error){
+
+  results.innerHTML=
+  "<p>Goobrow could not connect to the search server.</p>";
+
+ }
+
+}
+
+async function loadImages(){
+
+ try{
+
+  const response=await fetch(
+   "http://localhost:3001/api/images?q="+encodeURIComponent(query)
+  );
+
+  const data=await response.json();
+
+  results.innerHTML="";
+
+  if(!data.results||data.results.length===0){
+
+   results.innerHTML="<p>No images found for <b>"+
+   escapeHtml(query)+"</b>.</p>";
+
+   return;
+
+  }
+
+  const grid=document.createElement("div");
+
+  grid.className="imageGrid";
+
+  data.results.forEach(image=>{
+
+   const card=document.createElement("div");
+
+   card.className="imageCard";
+
+   card.innerHTML=
+   "<a href=\""+
+   escapeHtml(image.image)+
+   "\" target=\"_blank\" rel=\"noopener\">"+
+   "<img src=\""+
+   escapeHtml(image.image)+
+   "\" loading=\"lazy\" alt=\""+
+   escapeHtml(image.title)+
+   "\">"+
+   "</a>"+
+   "<div class=\"imageTitle\">"+
+   escapeHtml(image.title)+
+   "</div>";
+
+   grid.appendChild(card);
+
+  });
+
+  results.appendChild(grid);
+
+ }catch(error){
+
+  results.innerHTML="<p>Goobrow image search is unavailable.</p>";
+
+ }
+
+}
+
+async function loadNews(){
+
+ try{
+
+  const response=await fetch(
+   "http://localhost:3001/api/news?q="+encodeURIComponent(query)
+  );
+
+  const data=await response.json();
+
+  results.innerHTML="";
+
+  if(!data.results||data.results.length===0){
+
+   results.innerHTML="<p>No news found for <b>"+
+   escapeHtml(query)+"</b>.</p>";
+
+   return;
+
+  }
+
+  data.results.forEach(item=>{
+
+   const div=document.createElement("div");
+
+   div.className="newsItem";
+
+   div.innerHTML=
+   "<div class=\"newsThumb\">📰</div>"+
+   "<div>"+
+   "<h2 class=\"newsTitle\">"+
+   "<a href=\""+
+   escapeHtml(item.url)+
+   "\" target=\"_blank\" rel=\"noopener\">"+
+   escapeHtml(item.title)+
+   "</a>"+
+   "</h2>"+
+   "<div class=\"newsDate\">"+
+   escapeHtml(item.date)+
+   "</div>"+
+   "</div>";
+
+   results.appendChild(div);
+
+  });
+
+ }catch(error){
+
+  results.innerHTML="<p>Goobrow news search is unavailable.</p>";
+
+ }
+
+}
+
+if(!query){
+
+ results.innerHTML="<p>Please enter a search query.</p>";
+
+}else if(mode==="images"){
+
+ loadImages();
+
+}else if(mode==="news"){
+
+ loadNews();
+
+}else{
+
+ loadWeb();
+
+}
+
+</script>
+
+</body>
+</html>

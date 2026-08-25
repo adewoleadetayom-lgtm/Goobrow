@@ -1,0 +1,2126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Goobrow</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;color:#202124;background:#fff}
+.topbar{height:60px;display:flex;align-items:center;justify-content:flex-end;padding:0 24px;gap:20px;font-size:14px}
+.menuWrap{position:relative}
+.menuBtn{border:0;background:transparent;font-size:27px;cursor:pointer;padding:6px 10px;border-radius:50%}
+.menuBtn:hover{background:#f1f3f4}
+.menuPanel{display:none;position:absolute;right:0;top:48px;width:210px;background:#fff;border:1px solid #ddd;border-radius:12px;box-shadow:0 4px 18px #0002;z-index:20;overflow:hidden}
+.menuPanel.open{display:block}
+.menuPanel a{display:block;padding:13px 16px;color:#202124;text-decoration:none;font-size:14px}
+.menuPanel a:hover{background:#f5f5f5}
+.topbar a{color:#202124;text-decoration:none}
+.home{min-height:calc(100vh - 100px);display:flex;flex-direction:column;align-items:center;padding-top:130px}
+.logo{font-size:64px;font-weight:700;letter-spacing:-5px;margin-bottom:28px}
+.logo span:nth-child(1){color:#4285f4}.logo span:nth-child(2){color:#ea4335}.logo span:nth-child(3){color:#fbbc05}.logo span:nth-child(4){color:#4285f4}.logo span:nth-child(5){color:#34a853}.logo span:nth-child(6){color:#ea4335}.logo span:nth-child(7){color:#4285f4}
+.searchWrap{width:min(680px,92%);position:relative}
+.search{height:52px;border:1px solid #dfe1e5;border-radius:28px;display:flex;align-items:center;padding:0 18px;box-shadow:0 1px 6px #20212418}
+.search:focus-within{box-shadow:0 1px 8px #20212435}
+.searchIcon{font-size:20px;margin-right:12px}
+.search input{flex:1;border:0;outline:0;font-size:17px;background:transparent}
+.search button{border:0;background:none;font-size:21px;cursor:pointer}
+.suggestions{position:absolute;top:58px;left:0;right:0;background:#fff;border-radius:14px;box-shadow:0 3px 12px #0002;overflow:hidden;z-index:5}
+.suggestion{padding:12px 18px;cursor:pointer;font-size:15px}
+.suggestion:hover{background:#f5f5f5}
+.buttons{display:flex;gap:12px;margin-top:28px}
+.buttons button{border:1px solid #f8f9fa;background:#f8f9fa;padding:11px 18px;border-radius:5px;font-size:14px;cursor:pointer}
+.buttons button:hover{border-color:#dadce0}
+.newsSection{width:min(1050px,94%);margin:55px auto 90px}
+.newsHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.newsHeader h2{font-size:22px;margin:0}
+.newsHeader a{color:#1a73e8;text-decoration:none;font-size:14px}
+.newsGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.newsCard{border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 1px 4px #0001}
+.newsCard img{width:100%;height:145px;object-fit:cover;display:block}
+.newsCard.noimage{padding-top:0}
+.newsBody{padding:13px}
+.newsTitle{font-size:15px;font-weight:600;line-height:1.4;color:#202124;text-decoration:none}
+.newsTitle:hover{text-decoration:underline}
+.newsSource{font-size:12px;color:#5f6368;margin-top:9px}
+.newsEmpty{color:#70757a;font-size:14px}
+.footer{padding:14px;text-align:center;background:#f2f2f2;color:#70757a;font-size:13px}
+@media(max-width:850px){.newsGrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:500px){.newsGrid{grid-template-columns:1fr}.newsCard img{height:180px}}
+@media(max-width:600px){
+.home{padding-top:90px}.logo{font-size:52px}.buttons{flex-wrap:wrap;justify-content:center}
+}
+</style>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="icon.svg">
+
+<style id="goobrow-account-style">
+.goobrow-account-panel{
+  position:fixed;top:16px;right:16px;z-index:9999;
+  font-family:Arial,sans-serif;
+}
+.goobrow-account-button{
+  border:1px solid #dadce0;background:#fff;border-radius:24px;
+  padding:9px 15px;cursor:pointer;font-weight:600;
+}
+.goobrow-account-menu{
+  display:none;background:#fff;border:1px solid #ddd;border-radius:14px;
+  padding:16px;width:280px;box-shadow:0 5px 24px rgba(0,0,0,.15);
+  margin-top:8px;
+}
+.goobrow-account-menu.open{display:block}
+.goobrow-account-menu input{
+  width:100%;box-sizing:border-box;padding:11px;margin:5px 0;
+  border:1px solid #ddd;border-radius:8px;
+}
+.goobrow-account-menu button{
+  width:100%;padding:10px;margin-top:6px;border:0;border-radius:8px;
+  cursor:pointer;
+}
+.goobrow-primary{background:#1a73e8;color:#fff}
+.goobrow-secondary{background:#f1f3f4}
+.goobrow-profile{
+  display:none;margin-top:8px;padding:12px;background:#f8f9fa;border-radius:10px;
+}
+.goobrow-profile.show{display:block}
+.goobrow-news-box{
+  max-width:900px;margin:28px auto;padding:20px;
+  border:1px solid #e5e7eb;border-radius:16px;background:#fff;
+  font-family:Arial,sans-serif;
+}
+.goobrow-news-box h2{margin-top:0}
+.goobrow-news-item{
+  padding:12px 0;border-bottom:1px solid #eee;
+}
+.goobrow-news-item:last-child{border-bottom:0}
+.goobrow-news-item a{font-weight:600;text-decoration:none;color:#1a73e8}
+.goobrow-news-item p{margin:5px 0;color:#5f6368;font-size:14px}
+</style>
+
+<style id="goobrow-community-style">
+
+.goobrow-community-section{
+  max-width:900px;
+  margin:30px auto;
+  padding:0 18px;
+  font-family:Arial,sans-serif;
+}
+
+.goobrow-community-card{
+  background:#fff;
+  border:1px solid #e1e5ea;
+  border-radius:18px;
+  padding:20px;
+  margin-bottom:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,.04);
+}
+
+.goobrow-community-card h2{
+  margin-top:0;
+}
+
+.goobrow-post-box textarea{
+  width:100%;
+  min-height:90px;
+  box-sizing:border-box;
+  border:1px solid #dadce0;
+  border-radius:12px;
+  padding:13px;
+  font-size:15px;
+  resize:vertical;
+}
+
+.goobrow-post-button{
+  margin-top:10px;
+  border:0;
+  background:#1a73e8;
+  color:white;
+  border-radius:22px;
+  padding:10px 18px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.goobrow-post{
+  border-top:1px solid #eee;
+  padding:16px 0;
+}
+
+.goobrow-post:first-child{
+  border-top:0;
+}
+
+.goobrow-post-name{
+  font-weight:bold;
+}
+
+.goobrow-post-date{
+  font-size:12px;
+  color:#777;
+  margin:3px 0 8px;
+}
+
+.goobrow-post-text{
+  white-space:pre-wrap;
+  line-height:1.5;
+}
+
+.goobrow-like{
+  margin-top:8px;
+  border:1px solid #ddd;
+  background:#fff;
+  border-radius:18px;
+  padding:6px 12px;
+  cursor:pointer;
+}
+
+.goobrow-video-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;
+}
+
+.goobrow-video-item{
+  border:1px solid #eee;
+  border-radius:12px;
+  padding:12px;
+}
+
+.goobrow-video-item a{
+  text-decoration:none;
+  color:#1a73e8;
+  font-weight:600;
+}
+
+@media(max-width:600px){
+  .goobrow-community-section{
+    padding:0 12px;
+  }
+}
+
+</style>
+
+<style id="goobrow-google-search-ui">
+.goobrow-search-wrap{
+  width:min(680px,92vw);
+  margin:28px auto 18px;
+  position:relative;
+  font-family:Arial,sans-serif;
+}
+.goobrow-search-box{
+  height:54px;
+  border:1px solid #dfe1e5;
+  border-radius:28px;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  padding:0 10px 0 17px;
+  box-sizing:border-box;
+  box-shadow:0 1px 6px rgba(32,33,36,.14);
+}
+.goobrow-search-box:hover,
+.goobrow-search-box:focus-within{
+  box-shadow:0 1px 8px rgba(32,33,36,.25);
+  border-color:transparent;
+}
+.goobrow-search-icon{
+  width:25px;
+  height:25px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#5f6368;
+}
+.goobrow-search-icon svg{
+  width:22px;
+  height:22px;
+}
+.goobrow-search-input{
+  flex:1;
+  height:100%;
+  border:0;
+  outline:0;
+  background:transparent;
+  padding:0 12px;
+  font-size:17px;
+  color:#202124;
+  min-width:0;
+}
+.goobrow-search-input::placeholder{
+  color:#70757a;
+}
+.goobrow-search-button{
+  width:42px;
+  height:42px;
+  border:0;
+  background:transparent;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  flex-shrink:0;
+}
+.goobrow-search-button:hover{
+  background:#f1f3f4;
+}
+.goobrow-search-button svg{
+  width:22px;
+  height:22px;
+}
+.goobrow-search-suggestions{
+  position:absolute;
+  left:0;
+  right:0;
+  top:58px;
+  background:#fff;
+  border-radius:0 0 18px 18px;
+  box-shadow:0 4px 14px rgba(0,0,0,.16);
+  overflow:hidden;
+  z-index:99999;
+  display:none;
+}
+.goobrow-search-suggestion{
+  padding:11px 18px;
+  display:flex;
+  gap:12px;
+  align-items:center;
+  cursor:pointer;
+  font-size:15px;
+}
+.goobrow-search-suggestion:hover{
+  background:#f8f9fa;
+}
+@media(max-width:600px){
+  .goobrow-search-wrap{
+    width:94vw;
+  }
+  .goobrow-search-box{
+    height:50px;
+  }
+  .goobrow-search-input{
+    font-size:16px;
+  }
+}
+</style>
+
+<style id="goobrow-combined-home-style">
+
+/* ===== GOOBROW COMBINED HOMEPAGE ===== */
+
+.goobrow-home-content{
+  width:min(1000px,94vw);
+  margin:18px auto 50px;
+  font-family:Arial,sans-serif;
+}
+
+.goobrow-home-card{
+  background:#fff;
+  border:1px solid #e1e5ea;
+  border-radius:20px;
+  padding:20px;
+  margin:18px 0;
+  box-shadow:0 2px 10px rgba(0,0,0,.06);
+}
+
+.goobrow-home-card h2{
+  margin:0 0 16px;
+  font-size:21px;
+  color:#202124;
+}
+
+.goobrow-news-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+  gap:16px;
+}
+
+.goobrow-news-card{
+  overflow:hidden;
+  border:1px solid #e5e7eb;
+  border-radius:16px;
+  background:#fff;
+  transition:transform .15s,box-shadow .15s;
+}
+
+.goobrow-news-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 5px 18px rgba(0,0,0,.10);
+}
+
+.goobrow-news-image{
+  width:100%;
+  height:165px;
+  object-fit:cover;
+  display:block;
+  background:#f1f3f4;
+}
+
+.goobrow-news-body{
+  padding:14px;
+}
+
+.goobrow-news-title{
+  color:#202124;
+  font-weight:700;
+  font-size:16px;
+  line-height:1.4;
+  text-decoration:none;
+}
+
+.goobrow-news-title:hover{
+  color:#1a73e8;
+}
+
+.goobrow-news-description{
+  color:#5f6368;
+  font-size:13px;
+  line-height:1.45;
+  margin:8px 0 0;
+}
+
+.goobrow-news-meta{
+  color:#777;
+  font-size:12px;
+  margin-top:9px;
+}
+
+.goobrow-video-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;
+}
+
+.goobrow-video-card{
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  padding:15px;
+  background:#fff;
+}
+
+.goobrow-video-card a{
+  color:#202124;
+  text-decoration:none;
+  font-weight:600;
+  line-height:1.4;
+}
+
+.goobrow-video-card a:hover{
+  color:#1a73e8;
+}
+
+.goobrow-community-post{
+  border-top:1px solid #eee;
+  padding:15px 0;
+}
+
+.goobrow-community-post:first-child{
+  border-top:0;
+}
+
+.goobrow-community-name{
+  font-weight:700;
+  color:#202124;
+}
+
+.goobrow-community-date{
+  color:#777;
+  font-size:12px;
+  margin:3px 0 8px;
+}
+
+.goobrow-community-text{
+  color:#333;
+  white-space:pre-wrap;
+  line-height:1.5;
+}
+
+.goobrow-like-button{
+  margin-top:9px;
+  border:1px solid #ddd;
+  background:#fff;
+  border-radius:18px;
+  padding:6px 12px;
+  cursor:pointer;
+}
+
+.goobrow-like-button:hover{
+  background:#f8f9fa;
+}
+
+.goobrow-section-more{
+  text-align:center;
+  margin-top:16px;
+}
+
+.goobrow-section-more a{
+  color:#1a73e8;
+  text-decoration:none;
+  font-weight:600;
+}
+
+.goobrow-loading{
+  color:#777;
+  padding:10px 0;
+}
+
+.goobrow-empty{
+  color:#777;
+  padding:8px 0;
+}
+
+@media(max-width:600px){
+
+  .goobrow-home-content{
+    width:94vw;
+  }
+
+  .goobrow-home-card{
+    padding:15px;
+    border-radius:16px;
+  }
+
+  .goobrow-news-grid{
+    grid-template-columns:1fr;
+  }
+
+  .goobrow-news-image{
+    height:190px;
+  }
+}
+
+</style>
+
+<style id="goobrow-old-home-sections-hidden">
+/* The new combined homepage feed replaces duplicate older sections. */
+#goobrow-news-box{
+  display:none !important;
+}
+</style>
+
+<style id="goobrow-google-news-layout">
+
+/* ===== GOOGLE-STYLE HOME FEED ===== */
+
+#goobrow-combined-home{
+  width:min(1000px,94vw);
+  margin:8px auto 50px;
+}
+
+#goobrow-combined-home .goobrow-home-card{
+  border:0;
+  box-shadow:none;
+  background:transparent;
+  padding:0;
+  margin:12px 0 26px;
+}
+
+#goobrow-combined-home .goobrow-home-card h2{
+  font-size:18px;
+  font-weight:600;
+  margin:0 0 12px;
+}
+
+/* NEWS DIRECTLY UNDER SEARCH */
+
+#goobrow-combined-news{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+}
+
+.goobrow-news-card{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  overflow:hidden;
+}
+
+.goobrow-news-image{
+  width:100%;
+  height:180px;
+  object-fit:cover;
+  display:block;
+  background:#f1f3f4;
+}
+
+.goobrow-news-body{
+  padding:12px;
+}
+
+.goobrow-news-title{
+  color:#202124;
+  font-weight:600;
+  font-size:15px;
+  line-height:1.4;
+  text-decoration:none;
+  display:block;
+}
+
+.goobrow-news-description{
+  color:#5f6368;
+  font-size:13px;
+  line-height:1.4;
+  margin:6px 0 0;
+}
+
+/* INLINE VIDEO */
+
+.goobrow-inline-video{
+  width:100%;
+  aspect-ratio:16/9;
+  border:0;
+  display:block;
+  background:#111;
+}
+
+.goobrow-media-label{
+  padding:9px 12px;
+  font-size:13px;
+  font-weight:600;
+}
+
+/* HIDE OLD DUPLICATE SECTIONS */
+
+#goobrow-news-box{
+  display:none !important;
+}
+
+/* MOBILE */
+
+@media(max-width:750px){
+
+  #goobrow-combined-news{
+    grid-template-columns:1fr;
+  }
+
+  .goobrow-news-image{
+    height:210px;
+  }
+
+}
+
+</style>
+</head>
+<body>
+
+<div class="goobrow-search-wrap">
+  <form class="goobrow-search-box" id="goobrow-google-search-form">
+
+    <span class="goobrow-search-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path fill="currentColor"
+        d="M9.5 3a6.5 6.5 0 1 0 3.98 11.64l4.44 4.44
+        1.41-1.41-4.44-4.44A6.5 6.5 0 0 0 9.5 3Zm0 2
+        a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z"/>
+      </svg>
+    </span>
+
+    <input
+      id="goobrow-google-search-input"
+      class="goobrow-search-input"
+      type="search"
+      autocomplete="off"
+      placeholder="Search Goobrow"
+      aria-label="Search Goobrow">
+
+    <button
+      type="button"
+      class="goobrow-search-button"
+      id="goobrow-voice-button"
+      aria-label="Voice search"
+      title="Voice search">
+
+      <svg viewBox="0 0 24 24">
+        <path fill="#4285f4"
+        d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z"/>
+        <path fill="#34a853"
+        d="M17 11a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21H9v2h6v-2h-2v-3.08A7 7 0 0 0 19 11h-2Z"/>
+      </svg>
+    </button>
+
+    <button
+      type="submit"
+      class="goobrow-search-button"
+      aria-label="Search"
+      title="Search">
+
+      <svg viewBox="0 0 24 24">
+        <path fill="#4285f4"
+        d="M9.5 3a6.5 6.5 0 1 0 3.98 11.64l4.44 4.44
+        1.41-1.41-4.44-4.44A6.5 6.5 0 0 0 9.5 3Zm0 2
+        a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z"/>
+      </svg>
+    </button>
+
+  </form>
+
+  <div id="goobrow-search-suggestions"
+       class="goobrow-search-suggestions"></div>
+</div>
+
+<script>
+(function(){
+
+  const form=document.getElementById("goobrow-google-search-form");
+  const input=document.getElementById("goobrow-google-search-input");
+  const voice=document.getElementById("goobrow-voice-button");
+  const suggestions=document.getElementById("goobrow-search-suggestions");
+
+  if(!form || !input) return;
+
+  form.addEventListener("submit",function(e){
+    e.preventDefault();
+
+    const q=input.value.trim();
+
+    if(!q) return;
+
+    window.location.href=
+      "/results.html?q="+encodeURIComponent(q);
+  });
+
+  input.addEventListener("input",async function(){
+
+    const q=input.value.trim();
+
+    if(!q){
+      suggestions.style.display="none";
+      suggestions.innerHTML="";
+      return;
+    }
+
+    try{
+
+      const r=await fetch(
+        "/api/suggestions?q="+encodeURIComponent(q)
+      );
+
+      const data=await r.json();
+
+      const items=data.results || data.suggestions || [];
+
+      if(!items.length){
+        suggestions.style.display="none";
+        return;
+      }
+
+      suggestions.innerHTML=items.slice(0,6).map(item=>{
+
+        const text=
+          typeof item==="string"
+          ? item
+          : item.text || item.query || "";
+
+        if(!text) return "";
+
+        return `
+          <div class="goobrow-search-suggestion"
+               data-query="${String(text).replace(/"/g,"&quot;")}">
+            <span>🔍</span>
+            <span>${String(text)
+              .replace(/</g,"&lt;")
+              .replace(/>/g,"&gt;")}</span>
+          </div>
+        `;
+
+      }).join("");
+
+      suggestions.style.display=
+        suggestions.innerHTML ? "block" : "none";
+
+      suggestions
+        .querySelectorAll(".goobrow-search-suggestion")
+        .forEach(item=>{
+          item.addEventListener("click",function(){
+            input.value=this.dataset.query;
+            form.requestSubmit();
+          });
+        });
+
+    }catch{
+      suggestions.style.display="none";
+    }
+
+  });
+
+  document.addEventListener("click",function(e){
+    if(!e.target.closest(".goobrow-search-wrap")){
+      suggestions.style.display="none";
+    }
+  });
+
+  voice.addEventListener("click",function(){
+
+    const SpeechRecognition=
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+    if(!SpeechRecognition){
+      alert("Voice search is not supported by this browser.");
+      return;
+    }
+
+    const recognition=new SpeechRecognition();
+
+    recognition.lang="en-NG";
+    recognition.interimResults=false;
+    recognition.maxAlternatives=1;
+
+    recognition.start();
+
+    voice.style.transform="scale(1.12)";
+
+    recognition.onresult=function(event){
+
+      const text=
+        event.results[0][0].transcript;
+
+      input.value=text;
+
+      form.requestSubmit();
+    };
+
+    recognition.onerror=function(){
+      voice.style.transform="";
+    };
+
+    recognition.onend=function(){
+      voice.style.transform="";
+    };
+
+  });
+
+})();
+</script>
+
+
+
+<div id="goobrow-account-panel" class="goobrow-account-panel">
+  <button class="goobrow-account-button" onclick="goobrowToggleAccount()">👤 Account</button>
+  <div id="goobrow-account-menu" class="goobrow-account-menu">
+    <div id="goobrow-auth-area">
+      <h3 style="margin:0 0 8px">Goobrow Account</h3>
+      <input id="goobrow-name" placeholder="Your name">
+      <input id="goobrow-email" type="email" placeholder="Email">
+      <input id="goobrow-password" type="password" placeholder="Password">
+      <button class="goobrow-primary" onclick="goobrowRegister()">Create account</button>
+      <button class="goobrow-secondary" onclick="goobrowLogin()">Sign in</button>
+      <p id="goobrow-auth-message" style="font-size:13px"></p>
+    </div>
+    <div id="goobrow-profile-area" class="goobrow-profile">
+      <strong id="goobrow-profile-name"></strong>
+      <div id="goobrow-profile-email"></div>
+      <div id="goobrow-profile-joined" style="font-size:12px;color:#777;margin-top:5px"></div>
+      <button class="goobrow-secondary" onclick="goobrowLogout()">Sign out</button>
+    </div>
+  </div>
+</div>
+
+<div id="goobrow-news-box" class="goobrow-news-box">
+  <h2>📰 Latest News</h2>
+  <div id="goobrow-home-news">Loading latest news...</div>
+</div>
+
+<script>
+function goobrowToggleAccount(){
+  document.getElementById("goobrow-account-menu").classList.toggle("open");
+}
+
+function goobrowMessage(text){
+  document.getElementById("goobrow-auth-message").textContent=text;
+}
+
+function goobrowShowProfile(user){
+  document.getElementById("goobrow-auth-area").style.display="none";
+  const p=document.getElementById("goobrow-profile-area");
+  p.classList.add("show");
+  document.getElementById("goobrow-profile-name").textContent="👋 "+user.name;
+  document.getElementById("goobrow-profile-email").textContent=user.email;
+  document.getElementById("goobrow-profile-joined").textContent=
+    "Member since "+new Date(user.joined).toLocaleDateString();
+}
+
+function goobrowShowLogin(){
+  document.getElementById("goobrow-auth-area").style.display="block";
+  document.getElementById("goobrow-profile-area").classList.remove("show");
+}
+
+async function goobrowRegister(){
+  const name=document.getElementById("goobrow-name").value.trim();
+  const email=document.getElementById("goobrow-email").value.trim();
+  const password=document.getElementById("goobrow-password").value;
+
+  goobrowMessage("Creating account...");
+
+  try{
+    const r=await fetch("/api/register",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name,email,password})
+    });
+    const data=await r.json();
+
+    if(!data.ok){
+      goobrowMessage(data.error || "Registration failed.");
+      return;
+    }
+
+    localStorage.setItem("goobrowUser",JSON.stringify(data.user));
+    goobrowShowProfile(data.user);
+  }catch(e){
+    goobrowMessage("Unable to connect to Goobrow.");
+  }
+}
+
+async function goobrowLogin(){
+  const email=document.getElementById("goobrow-email").value.trim();
+  const password=document.getElementById("goobrow-password").value;
+
+  goobrowMessage("Signing in...");
+
+  try{
+    const r=await fetch("/api/login",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email,password})
+    });
+    const data=await r.json();
+
+    if(!data.ok){
+      goobrowMessage(data.error || "Login failed.");
+      return;
+    }
+
+    localStorage.setItem("goobrowUser",JSON.stringify(data.user));
+    goobrowShowProfile(data.user);
+  }catch(e){
+    goobrowMessage("Unable to connect to Goobrow.");
+  }
+}
+
+function goobrowLogout(){
+  localStorage.removeItem("goobrowUser");
+  goobrowShowLogin();
+  goobrowMessage("Signed out.");
+}
+
+function goobrowRestoreAccount(){
+  try{
+    const user=JSON.parse(localStorage.getItem("goobrowUser")||"null");
+    if(user) goobrowShowProfile(user);
+  }catch{}
+}
+
+async function goobrowLoadLatestNews(){
+  const box=document.getElementById("goobrow-home-news");
+  try{
+    const r=await fetch("/api/news?q=latest");
+    const data=await r.json();
+    const items=data.results || data.news || [];
+
+    if(!items.length){
+      box.innerHTML="<p>Latest news is temporarily unavailable.</p>";
+      return;
+    }
+
+    box.innerHTML=items.slice(0,6).map(item=>{
+      const title=item.title || "Latest news";
+      const url=item.url || item.link || "#";
+      const desc=item.description || item.snippet || "";
+      return '<div class="goobrow-news-item">'+
+        '<a href="'+url+'" target="_blank" rel="noopener">'+
+        title.replace(/</g,"&lt;").replace(/>/g,"&gt;")+
+        '</a><p>'+desc.replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</p></div>';
+    }).join("");
+  }catch(e){
+    box.innerHTML="<p>Latest news is temporarily unavailable.</p>";
+  }
+}
+
+document.addEventListener("DOMContentLoaded",()=>{
+  goobrowRestoreAccount();
+  goobrowLoadLatestNews();
+});
+</script>
+
+
+<div class="topbar">
+<div class="menuWrap">
+<button class="menuBtn" id="menuBtn" aria-label="Open menu">☰</button>
+<div class="menuPanel" id="menuPanel">
+<a href="index.html">🏠 Home</a>
+<a href="results.html?mode=all">🔎 All</a>
+<a href="images.html">🖼️ Images</a>
+<a href="results.html?mode=videos">🎬 Videos</a>
+<a href="results.html?mode=news">📰 News</a>
+<a href="results.html?mode=ai">✨ AI Mode</a>
+</div>
+</div>
+<a href="images.html">Images</a>
+<a href="results.html?mode=news">News</a>
+</div>
+
+<main class="home">
+<div class="logo"><span>G</span><span>o</span><span>o</span><span>b</span><span>r</span><span>o</span><span>w</span></div>
+
+<div class="searchWrap">
+<form class="search" id="searchForm">
+<span class="searchIcon">🔎</span>
+<input id="searchInput" autocomplete="off" autofocus placeholder="Search with Goobrow">
+<button type="submit">🔍</button>
+</form>
+<div id="suggestions" class="suggestions" hidden></div>
+</div>
+
+<div class="buttons">
+<button type="button" onclick="goSearch()">Goobrow Search</button>
+<button type="button" onclick="goImages()">Goobrow Images</button>
+</div>
+</main>
+
+<section class="newsSection">
+<div class="newsHeader">
+<h2>📰 Recent & Trending News</h2>
+<a href="results.html?mode=news">View all</a>
+</div>
+<div id="homeNews" class="newsGrid">
+<div class="newsEmpty">Loading recent news...</div>
+</div>
+</section>
+
+<div class="footer">Goobrow Search</div>
+
+<script>
+const input=document.getElementById("searchInput");
+const suggestions=document.getElementById("suggestions");
+const form=document.getElementById("searchForm");
+let timer;
+
+function goSearch(){
+ const q=input.value.trim();
+ if(q) location.href="results.html?q="+encodeURIComponent(q)+"&mode=all";
+}
+
+function goImages(){
+ const q=input.value.trim();
+ if(q) location.href="images.html?q="+encodeURIComponent(q);
+}
+
+form.addEventListener("submit",e=>{
+ e.preventDefault();
+ goSearch();
+});
+
+input.addEventListener("input",()=>{
+ clearTimeout(timer);
+ const q=input.value.trim();
+
+ if(!q){
+  suggestions.innerHTML="";
+  suggestions.hidden=true;
+  return;
+ }
+
+ timer=setTimeout(async()=>{
+  try{
+   const r=await fetch("/api/suggestions?q="+encodeURIComponent(q));
+   const data=await r.json();
+   const list=data.suggestions||[];
+
+   suggestions.innerHTML="";
+   list.forEach(item=>{
+    const div=document.createElement("div");
+    div.className="suggestion";
+    div.textContent=item;
+    div.onclick=()=>{
+     input.value=item;
+     goSearch();
+    };
+    suggestions.appendChild(div);
+   });
+
+   suggestions.hidden=list.length===0;
+  }catch{
+   suggestions.hidden=true;
+  }
+ },150);
+});
+
+document.addEventListener("click",e=>{
+ if(!e.target.closest(".searchWrap")){
+  suggestions.hidden=true;
+ }
+});
+
+const menuBtn=document.getElementById("menuBtn");
+const menuPanel=document.getElementById("menuPanel");
+
+menuBtn.addEventListener("click",e=>{
+ e.stopPropagation();
+ menuPanel.classList.toggle("open");
+});
+
+document.addEventListener("click",e=>{
+ if(!e.target.closest(".menuWrap")){
+  menuPanel.classList.remove("open");
+ }
+});
+
+async function loadHomeNews(){
+ const box=document.getElementById("homeNews");
+ if(!box)return;
+
+ try{
+  const r=await fetch("/api/news?q=latest news");
+  const data=await r.json();
+  const news=data.results||[];
+
+  if(!news.length){
+   box.innerHTML='<div class="newsEmpty">Recent news is temporarily unavailable.</div>';
+   return;
+  }
+
+  box.innerHTML=news.slice(0,8).map(item=>{
+   const title=String(item.title||"");
+   const url=String(item.url||"#");
+   const image=String(item.image||"");
+
+   return `
+    <article class="newsCard ${image?"":"noimage"}">
+     ${image ? `<a href="${escapeAttr(url)}" target="_blank" rel="noopener">
+       <img src="${escapeAttr(image)}" loading="lazy" alt="${escapeAttr(title)}">
+     </a>` : ""}
+     <div class="newsBody">
+      <a class="newsTitle" href="${escapeAttr(url)}" target="_blank" rel="noopener">
+       ${escapeHtml(title)}
+      </a>
+      <div class="newsSource">Latest news</div>
+     </div>
+    </article>
+   `;
+  }).join("");
+
+ }catch(error){
+  box.innerHTML='<div class="newsEmpty">Recent news is temporarily unavailable.</div>';
+ }
+}
+
+function escapeAttr(text){
+ return String(text||"")
+  .replace(/&/g,"&amp;")
+  .replace(/"/g,"&quot;")
+  .replace(/</g,"&lt;")
+  .replace(/>/g,"&gt;");
+}
+
+loadHomeNews();
+</script>
+
+<style>
+.goobrow-footer{text-align:center;border-top:1px solid #eee;padding:25px;margin-top:50px;font-size:14px}
+.goobrow-footer a{color:#5f6368;text-decoration:none;margin:0 5px}
+.goobrow-footer a:hover{text-decoration:underline}
+</style>
+
+<footer class="goobrow-footer">
+<a href="about.html">About</a> ·
+<a href="privacy.html">Privacy Policy</a> ·
+<a href="terms.html">Terms</a> ·
+<a href="cookies.html">Cookie Policy</a> ·
+<a href="contact.html">Contact</a>
+</footer>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .then(() => console.log("Goobrow PWA: Service Worker ready"))
+      .catch(err => console.log("Goobrow PWA:", err));
+  });
+}
+</script>
+
+<section id="goobrow-community-section" class="goobrow-community-section">
+
+  <div class="goobrow-community-card goobrow-post-box">
+    <h2>🌍 Goobrow Community</h2>
+    <p id="goobrow-post-login-message">
+      Sign in to create a post and share something with the Goobrow community.
+    </p>
+
+    <textarea id="goobrow-post-text"
+      placeholder="What's on your mind?"
+      maxlength="1000"></textarea>
+
+    <button class="goobrow-post-button"
+      onclick="goobrowCreatePost()">Post</button>
+
+    <p id="goobrow-post-message"></p>
+  </div>
+
+  <div class="goobrow-community-card">
+    <h2>📰 Latest News</h2>
+    <div id="goobrow-home-news">
+      Loading latest news...
+    </div>
+  </div>
+
+  <div class="goobrow-community-card">
+    <h2>🎬 Latest Videos</h2>
+    <div id="goobrow-home-videos">
+      Loading videos...
+    </div>
+  </div>
+
+  <div class="goobrow-community-card">
+    <h2>👥 Latest Community Posts</h2>
+    <div id="goobrow-home-posts">
+      Loading posts...
+    </div>
+  </div>
+
+</section>
+
+<script>
+
+function goobrowCurrentUser(){
+  try{
+    return JSON.parse(
+      localStorage.getItem("goobrowUser") || "null"
+    );
+  }catch{
+    return null;
+  }
+}
+
+async function goobrowCreatePost(){
+
+  const user=goobrowCurrentUser();
+  const text=document
+    .getElementById("goobrow-post-text")
+    .value.trim();
+
+  const message=document
+    .getElementById("goobrow-post-message");
+
+  if(!user){
+    message.textContent="Please sign in first.";
+    return;
+  }
+
+  if(!text){
+    message.textContent="Write something first.";
+    return;
+  }
+
+  message.textContent="Saving post...";
+
+  try{
+
+    const response=await fetch("/api/posts",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        userId:user.id,
+        text:text
+      })
+    });
+
+    const data=await response.json();
+
+    if(!data.ok){
+      message.textContent=data.error || "Could not save post.";
+      return;
+    }
+
+    document.getElementById("goobrow-post-text").value="";
+    message.textContent="Post saved successfully.";
+
+    goobrowLoadPosts();
+
+  }catch(error){
+    message.textContent="Unable to connect to Goobrow.";
+  }
+}
+
+async function goobrowLoadPosts(){
+
+  const box=document.getElementById("goobrow-home-posts");
+
+  try{
+
+    const response=await fetch("/api/posts");
+    const data=await response.json();
+
+    const posts=data.posts || [];
+
+    if(!posts.length){
+      box.innerHTML="<p>No community posts yet. Be the first to post!</p>";
+      return;
+    }
+
+    box.innerHTML=posts.map(post=>{
+
+      const date=new Date(post.createdAt)
+        .toLocaleString();
+
+      return `
+        <article class="goobrow-post">
+          <div class="goobrow-post-name">
+            👤 ${String(post.userName)
+              .replace(/</g,"&lt;")
+              .replace(/>/g,"&gt;")}
+          </div>
+
+          <div class="goobrow-post-date">
+            ${date}
+          </div>
+
+          <div class="goobrow-post-text">
+            ${String(post.text)
+              .replace(/</g,"&lt;")
+              .replace(/>/g,"&gt;")}
+          </div>
+
+          <button class="goobrow-like"
+            onclick="goobrowLikePost('${post.id}')">
+            👍 ${post.likes || 0}
+          </button>
+        </article>
+      `;
+
+    }).join("");
+
+  }catch(error){
+
+    box.innerHTML=
+      "<p>Community posts are temporarily unavailable.</p>";
+
+  }
+}
+
+async function goobrowLikePost(id){
+
+  try{
+
+    const response=await fetch(
+      "/api/posts/"+encodeURIComponent(id)+"/like",
+      {method:"POST"}
+    );
+
+    const data=await response.json();
+
+    if(data.ok){
+      goobrowLoadPosts();
+    }
+
+  }catch{}
+}
+
+async function goobrowLoadHomeVideos(){
+
+  const box=document.getElementById(
+    "goobrow-home-videos"
+  );
+
+  try{
+
+    const response=await fetch(
+      "/api/videos?q=latest"
+    );
+
+    const data=await response.json();
+
+    const videos=data.results || data.videos || [];
+
+    if(!videos.length){
+      box.innerHTML="<p>Latest videos are temporarily unavailable.</p>";
+      return;
+    }
+
+    box.innerHTML=
+      '<div class="goobrow-video-grid">'+
+      videos.slice(0,6).map(video=>{
+
+        const title=video.title || "Video";
+        const url=video.url || video.link || "#";
+
+        return `
+          <div class="goobrow-video-item">
+            🎥
+            <a href="${url}"
+              target="_blank"
+              rel="noopener">
+              ${String(title)
+                .replace(/</g,"&lt;")
+                .replace(/>/g,"&gt;")}
+            </a>
+          </div>
+        `;
+
+      }).join("")+
+      "</div>";
+
+  }catch{
+
+    box.innerHTML=
+      "<p>Latest videos are temporarily unavailable.</p>";
+
+  }
+}
+
+async function goobrowLoadHomeNews(){
+
+  const box=document.getElementById(
+    "goobrow-home-news"
+  );
+
+  try{
+
+    const response=await fetch(
+      "/api/news?q=latest"
+    );
+
+    const data=await response.json();
+
+    const items=data.results || data.news || [];
+
+    if(!items.length){
+      box.innerHTML=
+        "<p>Latest news is temporarily unavailable.</p>";
+      return;
+    }
+
+    box.innerHTML=items.slice(0,6).map(item=>{
+
+      const title=item.title || "Latest news";
+      const url=item.url || item.link || "#";
+      const description=
+        item.description || item.snippet || "";
+
+      return `
+        <div class="goobrow-post">
+          <a href="${url}"
+            target="_blank"
+            rel="noopener"
+            style="font-weight:600;color:#1a73e8;text-decoration:none">
+            ${String(title)
+              .replace(/</g,"&lt;")
+              .replace(/>/g,"&gt;")}
+          </a>
+
+          <p style="color:#5f6368">
+            ${String(description)
+              .replace(/</g,"&lt;")
+              .replace(/>/g,"&gt;")}
+          </p>
+        </div>
+      `;
+
+    }).join("");
+
+  }catch{
+
+    box.innerHTML=
+      "<p>Latest news is temporarily unavailable.</p>";
+
+  }
+}
+
+document.addEventListener(
+  "DOMContentLoaded",
+  ()=>{
+    goobrowLoadPosts();
+    goobrowLoadHomeNews();
+    goobrowLoadHomeVideos();
+  }
+);
+
+</script>
+
+
+<!-- =========================================================
+     GOOBROW COMBINED HOMEPAGE CONTENT
+========================================================= -->
+
+<section id="goobrow-combined-home" class="goobrow-home-content">
+
+  <!-- LATEST NEWS -->
+  <div class="goobrow-home-card">
+
+    <h2>📰 Latest News</h2>
+
+    <div id="goobrow-combined-news"
+         class="goobrow-news-grid">
+
+      <div class="goobrow-loading">
+        Loading latest news...
+      </div>
+
+    </div>
+
+    <div class="goobrow-section-more">
+      <a href="/results.html?q=latest+news">
+        View more news →
+      </a>
+    </div>
+
+  </div>
+
+
+  <!-- LATEST VIDEOS -->
+  <div class="goobrow-home-card">
+
+    <h2>🎬 Latest Videos</h2>
+
+    <div id="goobrow-combined-videos"
+         class="goobrow-video-grid">
+
+      <div class="goobrow-loading">
+        Loading latest videos...
+      </div>
+
+    </div>
+
+    <div class="goobrow-section-more">
+      <a href="/results.html?q=latest+videos">
+        View more videos →
+      </a>
+    </div>
+
+  </div>
+
+
+  <!-- COMMUNITY -->
+  <div class="goobrow-home-card">
+
+    <h2>🌍 Goobrow Community</h2>
+
+    <div id="goobrow-combined-posts">
+
+      <div class="goobrow-loading">
+        Loading community posts...
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<script>
+(function(){
+
+  /* ========================================================
+     SAFE TEXT
+  ======================================================== */
+
+  function safe(value){
+    return String(value || "")
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;")
+      .replace(/'/g,"&#039;");
+  }
+
+
+  /* ========================================================
+     LATEST NEWS + IMAGES
+  ======================================================== */
+
+  async function loadCombinedNews(){
+
+    const box=document.getElementById(
+      "goobrow-combined-news"
+    );
+
+    if(!box) return;
+
+    try{
+
+      const response=await fetch(
+        "/api/news?q=latest"
+      );
+
+      const data=await response.json();
+
+      const items=
+        data.results ||
+        data.news ||
+        [];
+
+      if(!items.length){
+
+        box.innerHTML=
+          '<div class="goobrow-empty">'+
+          'Latest news is temporarily unavailable.'+
+          '</div>';
+
+        return;
+      }
+
+      box.innerHTML="";
+
+      const selected=items.slice(0,6);
+
+      for(const item of selected){
+
+        const title=
+          item.title ||
+          "Latest News";
+
+        const url=
+          item.url ||
+          item.link ||
+          "#";
+
+        const description=
+          item.description ||
+          item.snippet ||
+          "";
+
+        const source=
+          item.source ||
+          item.publisher ||
+          "Goobrow News";
+
+        let image=
+          item.image ||
+          item.thumbnail ||
+          item.imageUrl ||
+          "";
+
+        const card=document.createElement("article");
+
+        card.className="goobrow-news-card";
+
+        const imageElement=document.createElement("img");
+
+        imageElement.className=
+          "goobrow-news-image";
+
+        imageElement.alt=title;
+
+        imageElement.src=
+          image ||
+          "data:image/svg+xml;charset=UTF-8,"+
+          encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450">'+
+            '<rect width="100%" height="100%" fill="#f1f3f4"/>'+
+            '<text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#777" font-size="28">Goobrow News</text>'+
+            '</svg>'
+          );
+
+        /* Try to get the real article image */
+        if(!image && url && url !== "#"){
+
+          try{
+
+            const imageResponse=await fetch(
+              "/api/page-image?url="+
+              encodeURIComponent(url)
+            );
+
+            const imageData=
+              await imageResponse.json();
+
+            const discovered=
+              imageData.image ||
+              imageData.url ||
+              imageData.imageUrl ||
+              imageData.src ||
+              "";
+
+            if(discovered){
+              imageElement.src=discovered;
+            }
+
+          }catch{}
+
+        }
+
+        imageElement.onerror=function(){
+
+          this.src=
+            "data:image/svg+xml;charset=UTF-8,"+
+            encodeURIComponent(
+              '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450">'+
+              '<rect width="100%" height="100%" fill="#f1f3f4"/>'+
+              '<text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#777" font-size="28">Goobrow News</text>'+
+              '</svg>'
+            );
+
+        };
+
+        const body=document.createElement("div");
+
+        body.className="goobrow-news-body";
+
+        body.innerHTML=
+          '<a class="goobrow-news-title" '+
+          'href="'+safe(url)+'" '+
+          'target="_blank" rel="noopener">'+
+          safe(title)+
+          '</a>'+
+          '<p class="goobrow-news-description">'+
+          safe(description)+
+          '</p>'+
+          '<div class="goobrow-news-meta">'+
+          safe(source)+
+          '</div>';
+
+        card.appendChild(imageElement);
+        card.appendChild(body);
+
+        box.appendChild(card);
+
+      }
+
+    }catch(error){
+
+      console.error("News error:",error);
+
+      box.innerHTML=
+        '<div class="goobrow-empty">'+
+        'Latest news is temporarily unavailable.'+
+        '</div>';
+
+    }
+
+  }
+
+
+  /* ========================================================
+     LATEST VIDEOS
+  ======================================================== */
+
+  async function loadCombinedVideos(){
+
+    const box=document.getElementById(
+      "goobrow-combined-videos"
+    );
+
+    if(!box) return;
+
+    try{
+
+      const response=await fetch(
+        "/api/videos?q=latest"
+      );
+
+      const data=await response.json();
+
+      const videos=
+        data.results ||
+        data.videos ||
+        [];
+
+      if(!videos.length){
+
+        box.innerHTML=
+          '<div class="goobrow-empty">'+
+          'Latest videos are temporarily unavailable.'+
+          '</div>';
+
+        return;
+      }
+
+      box.innerHTML=videos
+        .slice(0,6)
+        .map(video=>{
+
+          const title=
+            video.title ||
+            "Latest Video";
+
+          const url=
+            video.url ||
+            video.link ||
+            video.destinationUrl ||
+            "#";
+
+          return `
+            <article class="goobrow-video-card">
+              <div style="font-size:28px;margin-bottom:10px">
+                🎬
+              </div>
+
+              <a href="${safe(url)}"
+                 target="_blank"
+                 rel="noopener">
+                ${safe(title)}
+              </a>
+            </article>
+          `;
+
+        })
+        .join("");
+
+    }catch(error){
+
+      box.innerHTML=
+        '<div class="goobrow-empty">'+
+        'Latest videos are temporarily unavailable.'+
+        '</div>';
+
+    }
+
+  }
+
+
+  /* ========================================================
+     COMMUNITY POSTS
+  ======================================================== */
+
+  async function loadCombinedPosts(){
+
+    const box=document.getElementById(
+      "goobrow-combined-posts"
+    );
+
+    if(!box) return;
+
+    try{
+
+      const response=await fetch(
+        "/api/posts"
+      );
+
+      const data=await response.json();
+
+      const posts=data.posts || [];
+
+      if(!posts.length){
+
+        box.innerHTML=
+          '<div class="goobrow-empty">'+
+          'No community posts yet. Sign in and be the first to post!'+
+          '</div>';
+
+        return;
+      }
+
+      box.innerHTML=posts
+        .slice(0,6)
+        .map(post=>{
+
+          const date=
+            post.createdAt
+              ? new Date(post.createdAt)
+                  .toLocaleString()
+              : "";
+
+          return `
+            <article class="goobrow-community-post">
+
+              <div class="goobrow-community-name">
+                👤 ${safe(post.userName)}
+              </div>
+
+              <div class="goobrow-community-date">
+                ${safe(date)}
+              </div>
+
+              <div class="goobrow-community-text">
+                ${safe(post.text)}
+              </div>
+
+              <button
+                class="goobrow-like-button"
+                onclick="goobrowCombinedLike('${safe(post.id)}')">
+                👍 ${Number(post.likes || 0)}
+              </button>
+
+            </article>
+          `;
+
+        })
+        .join("");
+
+    }catch(error){
+
+      box.innerHTML=
+        '<div class="goobrow-empty">'+
+        'Community posts are temporarily unavailable.'+
+        '</div>';
+
+    }
+
+  }
+
+
+  /* ========================================================
+     LIKE
+  ======================================================== */
+
+  window.goobrowCombinedLike=async function(id){
+
+    try{
+
+      const response=await fetch(
+        "/api/posts/"+encodeURIComponent(id)+"/like",
+        {method:"POST"}
+      );
+
+      const data=await response.json();
+
+      if(data.ok){
+        loadCombinedPosts();
+      }
+
+    }catch{}
+
+  };
+
+
+  /* ========================================================
+     START EVERYTHING
+  ======================================================== */
+
+  function startGoobrowHomepage(){
+
+    loadCombinedNews();
+    loadCombinedVideos();
+    loadCombinedPosts();
+
+  }
+
+  if(document.readyState==="loading"){
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      startGoobrowHomepage
+    );
+
+  }else{
+
+    startGoobrowHomepage();
+
+  }
+
+})();
+</script>
+
+
+<script id="goobrow-direct-news-script">
+(function(){
+
+  function safe(value){
+    return String(value || "")
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;")
+      .replace(/'/g,"&#039;");
+  }
+
+  function getNewsImage(item){
+
+    return (
+      item.image ||
+      item.thumbnail ||
+      item.imageUrl ||
+      item.thumbnailUrl ||
+      item.ogImage ||
+      ""
+    );
+
+  }
+
+  function getVideoUrl(item){
+
+    return (
+      item.videoUrl ||
+      item.video ||
+      item.embedUrl ||
+      item.url ||
+      item.link ||
+      ""
+    );
+
+  }
+
+  async function loadDirectNews(){
+
+    const box=document.getElementById(
+      "goobrow-combined-news"
+    );
+
+    if(!box) return;
+
+    try{
+
+      const response=await fetch(
+        "/api/news?q=latest"
+      );
+
+      const data=await response.json();
+
+      const items=
+        data.results ||
+        data.news ||
+        [];
+
+      if(!items.length){
+
+        box.innerHTML=
+          "<p>Latest news is temporarily unavailable.</p>";
+
+        return;
+
+      }
+
+      box.innerHTML="";
+
+      for(const item of items.slice(0,6)){
+
+        const title=
+          item.title ||
+          "Latest News";
+
+        const description=
+          item.description ||
+          item.snippet ||
+          "";
+
+        const url=
+          item.url ||
+          item.link ||
+          "#";
+
+        const image=getNewsImage(item);
+
+        const video=getVideoUrl(item);
+
+        const card=document.createElement("article");
+
+        card.className="goobrow-news-card";
+
+        /*
+          SHOW VIDEO DIRECTLY WHEN THE API
+          PROVIDES A REAL EMBED URL.
+        */
+
+        if(
+          video &&
+          (
+            video.includes("youtube.com/embed") ||
+            video.includes("youtube-nocookie.com/embed")
+          )
+        ){
+
+          const iframe=document.createElement("iframe");
+
+          iframe.className=
+            "goobrow-inline-video";
+
+          iframe.src=video;
+
+          iframe.allow=
+            "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+
+          iframe.allowFullscreen=true;
+
+          card.appendChild(iframe);
+
+        }else{
+
+          const img=document.createElement("img");
+
+          img.className=
+            "goobrow-news-image";
+
+          img.alt=title;
+
+          if(image){
+
+            img.src=image;
+
+          }else{
+
+            img.src=
+              "data:image/svg+xml;charset=UTF-8,"+
+              encodeURIComponent(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450">'+
+                '<rect width="100%" height="100%" fill="#f1f3f4"/>'+
+                '<text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#777" font-size="26">Goobrow News</text>'+
+                '</svg>'
+              );
+
+          }
+
+          img.onerror=function(){
+
+            this.style.display="none";
+
+          };
+
+          card.appendChild(img);
+
+        }
+
+        const body=document.createElement("div");
+
+        body.className="goobrow-news-body";
+
+        body.innerHTML=
+          '<a class="goobrow-news-title" '+
+          'href="'+safe(url)+'" '+
+          'target="_blank" '+
+          'rel="noopener">'+
+          safe(title)+
+          '</a>'+
+          '<p class="goobrow-news-description">'+
+          safe(description)+
+          '</p>';
+
+        card.appendChild(body);
+
+        box.appendChild(card);
+
+      }
+
+    }catch(error){
+
+      console.error(
+        "Goobrow latest news:",
+        error
+      );
+
+      box.innerHTML=
+        "<p>Latest news is temporarily unavailable.</p>";
+
+    }
+
+  }
+
+
+  /*
+    LOAD IMMEDIATELY.
+    This keeps the news directly below
+    the search box.
+  */
+
+  if(document.readyState==="loading"){
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      loadDirectNews
+    );
+
+  }else{
+
+    loadDirectNews();
+
+  }
+
+})();
+</script>
+
+</body>
+</html>

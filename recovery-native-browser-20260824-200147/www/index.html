@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<title>Goobrow</title>
+
+<style>
+*{box-sizing:border-box}
+
+html,body{
+ margin:0;
+ width:100%;
+ height:100%;
+ font-family:Arial,sans-serif;
+ background:#fff;
+ color:#202124;
+}
+
+body.dark{
+ background:#202124;
+ color:#fff;
+}
+
+header{
+ height:62px;
+ display:flex;
+ align-items:center;
+ gap:10px;
+ padding:8px 12px;
+ border-bottom:1px solid #ddd;
+ background:inherit;
+ position:sticky;
+ top:0;
+ z-index:10;
+}
+
+.logo{
+ font-size:24px;
+ font-weight:bold;
+ white-space:nowrap;
+}
+
+.g{
+ color:#4285f4;
+}
+
+.o1{
+ color:#ea4335;
+}
+
+.o2{
+ color:#fbbc05;
+}
+
+.b{
+ color:#4285f4;
+}
+
+.r{
+ color:#34a853;
+}
+
+.o3{
+ color:#ea4335;
+}
+
+.w{
+ color:#4285f4;
+}
+
+.address{
+ flex:1;
+ height:44px;
+ border:1px solid #ddd;
+ border-radius:24px;
+ display:flex;
+ align-items:center;
+ background:#f8f9fa;
+}
+
+.dark .address{
+ background:#303134;
+ border-color:#555;
+}
+
+.address input{
+ flex:1;
+ border:0;
+ outline:0;
+ background:transparent;
+ color:inherit;
+ font-size:15px;
+ padding:0 14px;
+ min-width:0;
+}
+
+.address button{
+ border:0;
+ background:transparent;
+ color:inherit;
+ font-size:18px;
+ padding:0 13px;
+}
+
+.iconbtn{
+ width:40px;
+ height:40px;
+ border:0;
+ background:transparent;
+ color:inherit;
+ font-size:21px;
+ border-radius:50%;
+}
+
+.iconbtn:active{
+ background:#ddd;
+}
+
+#home{
+ height:calc(100vh - 62px);
+ overflow:auto;
+ text-align:center;
+ padding:65px 15px;
+}
+
+.biglogo{
+ font-size:58px;
+ font-weight:bold;
+ margin-bottom:30px;
+}
+
+.search{
+ max-width:650px;
+ margin:auto;
+ height:54px;
+ border:1px solid #ddd;
+ border-radius:28px;
+ display:flex;
+ align-items:center;
+ box-shadow:0 1px 7px #0002;
+}
+
+.dark .search{
+ background:#303134;
+ border-color:#555;
+}
+
+.search input{
+ flex:1;
+ border:0;
+ outline:0;
+ background:transparent;
+ color:inherit;
+ font-size:17px;
+ padding:0 18px;
+}
+
+.search button{
+ border:0;
+ background:transparent;
+ color:inherit;
+ font-size:20px;
+ padding:0 18px;
+}
+
+.services{
+ max-width:750px;
+ margin:35px auto;
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+ gap:10px;
+}
+
+.service{
+ padding:15px 8px;
+ border:1px solid #ddd;
+ border-radius:12px;
+ background:#f8f9fa;
+ color:inherit;
+ font-size:14px;
+}
+
+.dark .service{
+ background:#303134;
+ border-color:#555;
+}
+
+#browser{
+ position:fixed;
+ inset:62px 0 0 0;
+ background:#fff;
+ z-index:20;
+ display:none;
+}
+
+.dark #browser{
+ background:#202124;
+}
+
+#browser iframe{
+ width:100%;
+ height:100%;
+ border:0;
+}
+
+#message{
+ padding:30px;
+ text-align:center;
+}
+
+footer{
+ margin-top:50px;
+ opacity:.65;
+}
+
+@media(max-width:600px){
+ .logo{font-size:19px}
+ .biglogo{font-size:45px}
+ header{gap:5px}
+ .address{height:42px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+
+<div class="logo">
+<span class="g">G</span><span class="o1">o</span><span class="o2">o</span><span class="b">b</span><span class="r">r</span><span class="o3">o</span><span class="w">w</span>
+</div>
+
+<button class="iconbtn" onclick="goHome()">⌂</button>
+
+<div class="address">
+<input id="url" placeholder="Search Google or enter website">
+<button onclick="navigate()">🔍</button>
+</div>
+
+<button class="iconbtn" onclick="goBack()">‹</button>
+<button class="iconbtn" onclick="goForward()">›</button>
+<button class="iconbtn" onclick="reloadPage()">↻</button>
+<button class="iconbtn" onclick="toggleDark()">🌙</button>
+
+</header>
+
+<div id="home">
+
+<div class="biglogo">
+<span class="g">G</span><span class="o1">o</span><span class="o2">o</span><span class="b">b</span><span class="r">r</span><span class="o3">o</span><span class="w">w</span>
+</div>
+
+<form class="search" id="searchForm">
+<input id="searchInput" autofocus autocomplete="off" placeholder="Search Google">
+<button>🔍</button>
+</form>
+
+<div class="services">
+
+<button class="service" onclick="googleSearch()">🔎<br>Google</button>
+<button class="service" onclick="googleImages()">🖼️<br>Images</button>
+<button class="service" onclick="googleNews()">📰<br>News</button>
+<button class="service" onclick="googleVideos()">🎬<br>Videos</button>
+<button class="service" onclick="openSite('https://maps.google.com/')">📍<br>Maps</button>
+<button class="service" onclick="openSite('https://scholar.google.com/')">🎓<br>Scholar</button>
+<button class="service" onclick="openSite('https://translate.google.com/')">🌐<br>Translate</button>
+<button class="service" onclick="openSite('https://gemini.google.com/')">✨<br>Gemini</button>
+<button class="service" onclick="openSite('https://www.youtube.com/')">▶️<br>YouTube</button>
+<button class="service" onclick="openSite('https://mail.google.com/')">✉️<br>Gmail</button>
+<button class="service" onclick="openSite('https://drive.google.com/')">☁️<br>Drive</button>
+<button class="service" onclick="openSite('https://calendar.google.com/')">📅<br>Calendar</button>
+
+</div>
+
+<footer>
+Goobrow Browser<br>
+Google Search inside Goobrow
+</footer>
+
+</div>
+
+<div id="browser">
+
+<iframe id="webview" allow="fullscreen"></iframe>
+
+<div id="message">
+<h2>Goobrow Browser</h2>
+<p>If a website cannot be displayed here, use the address bar above to open it.</p>
+</div>
+
+</div>
+
+<script>
+
+const home=document.getElementById("home");
+const browser=document.getElementById("browser");
+const frame=document.getElementById("webview");
+const url=document.getElementById("url");
+const searchInput=document.getElementById("searchInput");
+
+function googleSearch(){
+ const q=searchInput.value.trim();
+ if(!q)return;
+ openSite("https://www.google.com/search?q="+encodeURIComponent(q));
+}
+
+function googleImages(){
+ const q=searchInput.value.trim();
+ openSite("https://www.google.com/search?tbm=isch&q="+encodeURIComponent(q));
+}
+
+function googleNews(){
+ const q=searchInput.value.trim();
+ openSite("https://www.google.com/search?tbm=nws&q="+encodeURIComponent(q));
+}
+
+function googleVideos(){
+ const q=searchInput.value.trim();
+ openSite("https://www.google.com/search?tbm=vid&q="+encodeURIComponent(q));
+}
+
+function openSite(site){
+
+ home.style.display="none";
+ browser.style.display="block";
+
+ url.value=site;
+
+ document.getElementById("message").style.display="none";
+ frame.style.display="block";
+
+ frame.src=site;
+
+ localStorage.setItem("goobrowLastPage",site);
+}
+
+function navigate(){
+
+ let value=url.value.trim();
+
+ if(!value)return;
+
+ if(!/^https?:\/\//i.test(value)){
+
+   if(value.includes(".") && !value.includes(" ")){
+      value="https://"+value;
+   }else{
+      value="https://www.google.com/search?q="+encodeURIComponent(value);
+   }
+
+ }
+
+ openSite(value);
+}
+
+function goHome(){
+
+ frame.src="about:blank";
+ browser.style.display="none";
+ home.style.display="block";
+ url.value="";
+}
+
+function goBack(){
+
+ try{
+   frame.contentWindow.history.back();
+ }catch(e){}
+}
+
+function goForward(){
+
+ try{
+   frame.contentWindow.history.forward();
+ }catch(e){}
+}
+
+function reloadPage(){
+
+ try{
+   frame.contentWindow.location.reload();
+ }catch(e){
+   frame.src=frame.src;
+ }
+}
+
+function toggleDark(){
+
+ document.body.classList.toggle("dark");
+
+ localStorage.setItem(
+   "goobrowDark",
+   document.body.classList.contains("dark")?"1":"0"
+ );
+
+}
+
+if(localStorage.getItem("goobrowDark")==="1"){
+ document.body.classList.add("dark");
+}
+
+document.getElementById("searchForm").addEventListener("submit",function(e){
+ e.preventDefault();
+ googleSearch();
+});
+
+url.addEventListener("keydown",function(e){
+ if(e.key==="Enter"){
+   e.preventDefault();
+   navigate();
+ }
+});
+
+searchInput.addEventListener("keydown",function(e){
+ if(e.key==="Enter"){
+   e.preventDefault();
+   googleSearch();
+ }
+});
+
+</script>
+
+</body>
+</html>

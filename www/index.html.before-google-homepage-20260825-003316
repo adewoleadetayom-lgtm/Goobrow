@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<title>Goobrow</title>
+
+<style>
+*{box-sizing:border-box}
+
+html,body{
+ margin:0;
+ width:100%;
+ height:100%;
+ font-family:Arial,sans-serif;
+ background:#fff;
+ color:#202124;
+}
+
+body.dark{
+ background:#202124;
+ color:#fff;
+}
+
+header{
+ height:62px;
+ display:flex;
+ align-items:center;
+ gap:10px;
+ padding:8px 12px;
+ border-bottom:1px solid #ddd;
+ background:inherit;
+ position:sticky;
+ top:0;
+ z-index:10;
+}
+
+.logo{
+ font-size:24px;
+ font-weight:bold;
+ white-space:nowrap;
+}
+
+.g{
+ color:#4285f4;
+}
+
+.o1{
+ color:#ea4335;
+}
+
+.o2{
+ color:#fbbc05;
+}
+
+.b{
+ color:#4285f4;
+}
+
+.r{
+ color:#34a853;
+}
+
+.o3{
+ color:#ea4335;
+}
+
+.w{
+ color:#4285f4;
+}
+
+.address{
+ flex:1;
+ height:44px;
+ border:1px solid #ddd;
+ border-radius:24px;
+ display:flex;
+ align-items:center;
+ background:#f8f9fa;
+}
+
+.dark .address{
+ background:#303134;
+ border-color:#555;
+}
+
+.address input{
+ flex:1;
+ border:0;
+ outline:0;
+ background:transparent;
+ color:inherit;
+ font-size:15px;
+ padding:0 14px;
+ min-width:0;
+}
+
+.address button{
+ border:0;
+ background:transparent;
+ color:inherit;
+ font-size:18px;
+ padding:0 13px;
+}
+
+.iconbtn{
+ width:40px;
+ height:40px;
+ border:0;
+ background:transparent;
+ color:inherit;
+ font-size:21px;
+ border-radius:50%;
+}
+
+.iconbtn:active{
+ background:#ddd;
+}
+
+#home{
+ height:calc(100vh - 62px);
+ overflow:auto;
+ text-align:center;
+ padding:65px 15px;
+}
+
+.biglogo{
+ font-size:58px;
+ font-weight:bold;
+ margin-bottom:30px;
+}
+
+.search{
+ max-width:650px;
+ margin:auto;
+ height:54px;
+ border:1px solid #ddd;
+ border-radius:28px;
+ display:flex;
+ align-items:center;
+ box-shadow:0 1px 7px #0002;
+}
+
+.dark .search{
+ background:#303134;
+ border-color:#555;
+}
+
+.search input{
+ flex:1;
+ border:0;
+ outline:0;
+ background:transparent;
+ color:inherit;
+ font-size:17px;
+ padding:0 18px;
+}
+
+.search button{
+ border:0;
+ background:transparent;
+ color:inherit;
+ font-size:20px;
+ padding:0 18px;
+}
+
+.services{
+ max-width:750px;
+ margin:35px auto;
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+ gap:10px;
+}
+
+.service{
+ padding:15px 8px;
+ border:1px solid #ddd;
+ border-radius:12px;
+ background:#f8f9fa;
+ color:inherit;
+ font-size:14px;
+}
+
+.dark .service{
+ background:#303134;
+ border-color:#555;
+}
+
+#browser{
+ position:fixed;
+ inset:62px 0 0 0;
+ background:#fff;
+ z-index:20;
+ display:none;
+}
+
+.dark #browser{
+ background:#202124;
+}
+
+#browser iframe{
+ width:100%;
+ height:100%;
+ border:0;
+}
+
+#message{
+ padding:30px;
+ text-align:center;
+}
+
+footer{
+ margin-top:50px;
+ opacity:.65;
+}
+
+@media(max-width:600px){
+ .logo{font-size:19px}
+ .biglogo{font-size:45px}
+ header{gap:5px}
+ .address{height:42px}
+}
+</style>
+
+<style id="goobrow-real-browser">
+/* ===== GOOBROW CLASSIC BROWSER ===== */
+#browserChrome{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:#f1f3f4;
+  color:#202124;
+  font-family:Arial,sans-serif;
+}
+
+#browserChrome.dark{
+  background:#202124;
+  color:#e8eaed;
+}
+
+.gb-tabs{
+  height:42px;
+  display:flex;
+  align-items:flex-end;
+  padding:5px 8px 0;
+  background:#e8eaed;
+  overflow-x:auto;
+}
+
+.dark .gb-tabs{
+  background:#292a2d;
+}
+
+.gb-tab{
+  height:37px;
+  min-width:150px;
+  max-width:230px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:0 10px;
+  margin-right:3px;
+  border-radius:10px 10px 0 0;
+  background:#dfe1e5;
+  cursor:pointer;
+  user-select:none;
+}
+
+.dark .gb-tab{
+  background:#3c4043;
+}
+
+.gb-tab.active{
+  background:#fff;
+}
+
+.dark .gb-tab.active{
+  background:#202124;
+}
+
+.gb-tab-title{
+  flex:1;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  font-size:13px;
+}
+
+.gb-tab-close{
+  border:0;
+  background:transparent;
+  color:inherit;
+  font-size:17px;
+  cursor:pointer;
+  border-radius:50%;
+}
+
+.gb-tab-close:hover{
+  background:#c7c9cc;
+}
+
+.gb-newtab{
+  border:0;
+  background:transparent;
+  color:inherit;
+  font-size:24px;
+  width:42px;
+  height:36px;
+  cursor:pointer;
+}
+
+.gb-toolbar{
+  height:58px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 10px;
+  background:#fff;
+  border-bottom:1px solid #dadce0;
+}
+
+.dark .gb-toolbar{
+  background:#303134;
+  border-color:#5f6368;
+}
+
+.gb-tool{
+  width:38px;
+  height:38px;
+  border:0;
+  border-radius:50%;
+  background:transparent;
+  color:inherit;
+  font-size:20px;
+  cursor:pointer;
+}
+
+.gb-tool:hover{
+  background:#f1f3f4;
+}
+
+.dark .gb-tool:hover{
+  background:#3c4043;
+}
+
+.gb-address{
+  flex:1;
+  height:42px;
+  display:flex;
+  align-items:center;
+  border-radius:22px;
+  background:#f1f3f4;
+  padding:0 14px;
+  border:1px solid transparent;
+}
+
+.dark .gb-address{
+  background:#202124;
+}
+
+.gb-address:focus-within{
+  background:#fff;
+  border-color:#9aa0a6;
+}
+
+.dark .gb-address:focus-within{
+  background:#202124;
+}
+
+.gb-address input{
+  flex:1;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:inherit;
+  font-size:15px;
+}
+
+.gb-content{
+  position:absolute;
+  top:100px;
+  left:0;
+  right:0;
+  bottom:0;
+  background:#fff;
+}
+
+.dark .gb-content{
+  background:#202124;
+}
+
+.gb-content iframe{
+  width:100%;
+  height:100%;
+  border:0;
+  display:block;
+}
+
+.gb-bookmark{
+  color:#fbbc04;
+}
+
+@media(max-width:600px){
+  .gb-tab{
+    min-width:120px;
+    max-width:170px;
+  }
+
+  .gb-toolbar{
+    padding:6px;
+    gap:2px;
+  }
+
+  .gb-tool{
+    width:34px;
+    height:34px;
+  }
+
+  .gb-address{
+    height:39px;
+  }
+}
+</style>
+</head>
+
+
+<body>
+
+<header>
+
+<div class="logo">
+<span class="g">G</span><span class="o1">o</span><span class="o2">o</span><span class="b">b</span><span class="r">r</span><span class="o3">o</span><span class="w">w</span>
+</div>
+
+<button class="iconbtn" onclick="goHome()">⌂</button>
+
+<div class="address">
+<input id="url" placeholder="Search Google or enter website">
+<button onclick="navigate()">🔍</button>
+</div>
+
+<button class="iconbtn" onclick="goBack()">‹</button>
+<button class="iconbtn" onclick="goForward()">›</button>
+<button class="iconbtn" onclick="reloadPage()">↻</button>
+<button class="iconbtn" onclick="toggleDark()">🌙</button>
+
+</header>
+
+<div id="home">
+
+<div class="biglogo">
+<span class="g">G</span><span class="o1">o</span><span class="o2">o</span><span class="b">b</span><span class="r">r</span><span class="o3">o</span><span class="w">w</span>
+</div>
+
+<form class="search" id="searchForm">
+<input id="searchInput" autofocus autocomplete="off" placeholder="Search Google">
+<button>🔍</button>
+</form>
+
+<div class="services">
+
+<button class="service" onclick="googleSearch()">🔎<br>Google</button>
+<button class="service" onclick="googleImages()">🖼️<br>Images</button>
+<button class="service" onclick="googleNews()">📰<br>News</button>
+<button class="service" onclick="googleVideos()">🎬<br>Videos</button>
+<button class="service" onclick="openSite('https://maps.google.com/')">📍<br>Maps</button>
+<button class="service" onclick="openSite('https://scholar.google.com/')">🎓<br>Scholar</button>
+<button class="service" onclick="openSite('https://translate.google.com/')">🌐<br>Translate</button>
+<button class="service" onclick="openSite('https://gemini.google.com/')">✨<br>Gemini</button>
+<button class="service" onclick="openSite('https://www.youtube.com/')">▶️<br>YouTube</button>
+<button class="service" onclick="openSite('https://mail.google.com/')">✉️<br>Gmail</button>
+<button class="service" onclick="openSite('https://drive.google.com/')">☁️<br>Drive</button>
+<button class="service" onclick="openSite('https://calendar.google.com/')">📅<br>Calendar</button>
+
+</div>
+
+<footer>
+Goobrow Browser<br>
+Google Search inside Goobrow
+</footer>
+
+</div>
+
+
+<!-- ===== GOOBROW REAL WEBSITE BROWSER ===== -->
+<div id="browserChrome">
+
+  <div class="gb-tabs" id="gbTabs"></div>
+
+  <div class="gb-toolbar">
+    <button class="gb-tool" onclick="gbBack()" title="Back">‹</button>
+    <button class="gb-tool" onclick="gbForward()" title="Forward">›</button>
+    <button class="gb-tool" onclick="gbReload()" title="Reload">↻</button>
+    <button class="gb-tool" onclick="gbHome()" title="Home">⌂</button>
+
+    <div class="gb-address">
+      <span style="margin-right:8px">🔒</span>
+      <input id="gbAddress"
+             placeholder="Search Google or enter address"
+             autocomplete="off"
+             onkeydown="if(event.key==='Enter')gbNavigate()">
+      <button class="gb-tool" onclick="gbBookmark()" title="Bookmark">☆</button>
+    </div>
+
+    <button class="gb-tool" onclick="gbHistory()" title="History">🕘</button>
+    <button class="gb-tool" onclick="gbToggleDark()" title="Theme">⋮</button>
+  </div>
+
+  <div class="gb-content">
+    <iframe id="gbFrame"
+            title="Goobrow Browser"
+            allow="fullscreen"
+            referrerpolicy="strict-origin-when-cross-origin"></iframe>
+  </div>
+</div>
+
+<script>
+/* ===== GOOBROW TAB ENGINE ===== */
+
+const GB_HOME = location.origin + "/";
+
+let gbTabs = [];
+let gbActive = 0;
+
+function gbNewTab(url = GB_HOME, title = "New Tab"){
+  gbTabs.push({
+    url:url,
+    title:title,
+    history:[url],
+    historyIndex:0,
+    bookmark:false
+  });
+
+  gbActive = gbTabs.length - 1;
+  gbRenderTabs();
+  gbLoadActive();
+}
+
+function gbCloseTab(index){
+  if(gbTabs.length === 1){
+    gbTabs[0].url = GB_HOME;
+    gbTabs[0].title = "New Tab";
+    gbTabs[0].history = [GB_HOME];
+    gbTabs[0].historyIndex = 0;
+    gbActive = 0;
+    gbLoadActive();
+    return;
+  }
+
+  gbTabs.splice(index,1);
+
+  if(gbActive >= gbTabs.length)
+    gbActive = gbTabs.length - 1;
+
+  gbRenderTabs();
+  gbLoadActive();
+}
+
+function gbSwitchTab(index){
+  if(index < 0 || index >= gbTabs.length) return;
+  gbActive = index;
+  gbRenderTabs();
+  gbLoadActive();
+}
+
+function gbRenderTabs(){
+  const tabs=document.getElementById("gbTabs");
+
+  tabs.innerHTML="";
+
+  gbTabs.forEach((tab,index)=>{
+    const el=document.createElement("div");
+    el.className="gb-tab"+(index===gbActive?" active":"");
+
+    el.innerHTML=
+      '<span>🌐</span>'+
+      '<span class="gb-tab-title"></span>'+
+      '<button class="gb-tab-close" title="Close">×</button>';
+
+    el.querySelector(".gb-tab-title").textContent=tab.title;
+
+    el.onclick=()=>gbSwitchTab(index);
+
+    el.querySelector(".gb-tab-close").onclick=(e)=>{
+      e.stopPropagation();
+      gbCloseTab(index);
+    };
+
+    tabs.appendChild(el);
+  });
+
+  const plus=document.createElement("button");
+  plus.className="gb-newtab";
+  plus.textContent="+";
+  plus.title="New Tab";
+  plus.onclick=()=>gbNewTab();
+
+  tabs.appendChild(plus);
+}
+
+function gbLoadActive(){
+  const tab=gbTabs[gbActive];
+  if(!tab)return;
+
+  const frame=document.getElementById("gbFrame");
+  const address=document.getElementById("gbAddress");
+
+  address.value=tab.url;
+
+  if(frame.src !== tab.url)
+    frame.src=tab.url;
+}
+
+function gbNormalize(value){
+  value=value.trim();
+
+  if(!value)return GB_HOME;
+
+  if(/^https?:\/\//i.test(value))
+    return value;
+
+  if(value.includes(".") && !value.includes(" "))
+    return "https://"+value;
+
+  return "/results.html?q="+encodeURIComponent(value);
+}
+
+function gbNavigate(){
+  const address=document.getElementById("gbAddress");
+  const value=gbNormalize(address.value);
+
+  const tab=gbTabs[gbActive];
+
+  tab.url=value;
+  tab.title=value===GB_HOME ? "New Tab" : value.replace(/^https?:\/\//i,"");
+
+  tab.history=tab.history.slice(0,tab.historyIndex+1);
+  tab.history.push(value);
+  tab.historyIndex=tab.history.length-1;
+
+  localStorage.setItem("goobrowBrowserLastPage",value);
+
+  gbRenderTabs();
+  gbLoadActive();
+}
+
+function gbBack(){
+  const tab=gbTabs[gbActive];
+
+  if(tab.historyIndex>0){
+    tab.historyIndex--;
+    tab.url=tab.history[tab.historyIndex];
+    gbLoadActive();
+  }
+}
+
+function gbForward(){
+  const tab=gbTabs[gbActive];
+
+  if(tab.historyIndex<tab.history.length-1){
+    tab.historyIndex++;
+    tab.url=tab.history[tab.historyIndex];
+    gbLoadActive();
+  }
+}
+
+function gbReload(){
+  const frame=document.getElementById("gbFrame");
+  try{
+    frame.contentWindow.location.reload();
+  }catch(e){
+    frame.src=frame.src;
+  }
+}
+
+function gbHome(){
+  const tab=gbTabs[gbActive];
+
+  tab.url=GB_HOME;
+  tab.title="New Tab";
+  tab.history.push(GB_HOME);
+  tab.historyIndex=tab.history.length-1;
+
+  gbRenderTabs();
+  gbLoadActive();
+}
+
+function gbBookmark(){
+  const tab=gbTabs[gbActive];
+
+  tab.bookmark=!tab.bookmark;
+
+  const bookmarks=
+    JSON.parse(localStorage.getItem("goobrowBookmarks")||"[]");
+
+  const existing=bookmarks.findIndex(x=>x.url===tab.url);
+
+  if(tab.bookmark && existing===-1)
+    bookmarks.push({url:tab.url,title:tab.title});
+
+  if(!tab.bookmark && existing!==-1)
+    bookmarks.splice(existing,1);
+
+  localStorage.setItem(
+    "goobrowBookmarks",
+    JSON.stringify(bookmarks)
+  );
+}
+
+function gbHistory(){
+  const tab=gbTabs[gbActive];
+
+  const history=
+    JSON.parse(localStorage.getItem("goobrowHistory")||"[]");
+
+  if(tab.url && !history.includes(tab.url))
+    history.unshift(tab.url);
+
+  localStorage.setItem(
+    "goobrowHistory",
+    JSON.stringify(history.slice(0,100))
+  );
+
+  alert(
+    "Goobrow History\\n\\n"+
+    history.slice(0,20).join("\\n")
+  );
+}
+
+function gbToggleDark(){
+  const browser=document.getElementById("browserChrome");
+
+  browser.classList.toggle("dark");
+
+  localStorage.setItem(
+    "goobrowBrowserDark",
+    browser.classList.contains("dark") ? "1" : "0"
+  );
+}
+
+function gbOpenBrowser(url){
+  document.getElementById("browserChrome").style.display="block";
+
+  if(gbTabs.length===0)
+    gbNewTab(url||GB_HOME);
+  else if(url)
+    gbNavigateTo(url);
+}
+
+function gbNavigateTo(url){
+  const tab=gbTabs[gbActive];
+
+  tab.url=url;
+  tab.title=url===GB_HOME ? "New Tab" : url.replace(/^https?:\/\//i,"");
+
+  tab.history.push(url);
+  tab.historyIndex=tab.history.length-1;
+
+  gbRenderTabs();
+  gbLoadActive();
+}
+
+/* Make the browser available from the existing Goobrow page. */
+window.goobrowOpenBrowser=gbOpenBrowser;
+
+(function(){
+  const browser=document.getElementById("browserChrome");
+
+  if(localStorage.getItem("goobrowBrowserDark")==="1")
+    browser.classList.add("dark");
+
+  /* First browser tab is ALWAYS Goobrow's own homepage. */
+  gbNewTab(GB_HOME,"New Tab");
+})();
+</script>
+<script>
+
+const home=document.getElementById("home");
+const browser=document.getElementById("browser");
+const frame=document.getElementById("webview");
+const url=document.getElementById("url");
+const searchInput=document.getElementById("searchInput");
+
+function googleSearch(){
+ const q=searchInput.value.trim();
+ if(!q)return;
+ openSite("https://www.google.com/search?q="+encodeURIComponent(q));
+}
+
+function googleImages(){
+ const q=searchInput.value.trim();
+ openSite("https://www.google.com/search?tbm=isch&q="+encodeURIComponent(q));
+}
+
+function googleNews(){
+ const q=searchInput.value.trim();
+ openSite("https://www.google.com/search?tbm=nws&q="+encodeURIComponent(q));
+}
+
+function googleVideos(){
+ const q=searchInput.value.trim();
+ openSite("https://www.google.com/search?tbm=vid&q="+encodeURIComponent(q));
+}
+
+function openSite(site){
+
+ home.style.display="none";
+ browser.style.display="block";
+
+ url.value=site;
+
+ document.getElementById("message").style.display="none";
+ frame.style.display="block";
+
+ frame.src=site;
+
+ localStorage.setItem("goobrowLastPage",site);
+}
+
+function navigate(){
+
+ let value=url.value.trim();
+
+ if(!value)return;
+
+ if(!/^https?:\/\//i.test(value)){
+
+   if(value.includes(".") && !value.includes(" ")){
+      value="https://"+value;
+   }else{
+      value="https://www.google.com/search?q="+encodeURIComponent(value);
+   }
+
+ }
+
+ openSite(value);
+}
+
+function goHome(){
+
+ frame.src="about:blank";
+ browser.style.display="none";
+ home.style.display="block";
+ url.value="";
+}
+
+function goBack(){
+
+ try{
+   frame.contentWindow.history.back();
+ }catch(e){}
+}
+
+function goForward(){
+
+ try{
+   frame.contentWindow.history.forward();
+ }catch(e){}
+}
+
+function reloadPage(){
+
+ try{
+   frame.contentWindow.location.reload();
+ }catch(e){
+   frame.src=frame.src;
+ }
+}
+
+function toggleDark(){
+
+ document.body.classList.toggle("dark");
+
+ localStorage.setItem(
+   "goobrowDark",
+   document.body.classList.contains("dark")?"1":"0"
+ );
+
+}
+
+if(localStorage.getItem("goobrowDark")==="1"){
+ document.body.classList.add("dark");
+}
+
+document.getElementById("searchForm").addEventListener("submit",function(e){
+ e.preventDefault();
+ googleSearch();
+});
+
+url.addEventListener("keydown",function(e){
+ if(e.key==="Enter"){
+   e.preventDefault();
+   navigate();
+ }
+});
+
+searchInput.addEventListener("keydown",function(e){
+ if(e.key==="Enter"){
+   e.preventDefault();
+   googleSearch();
+ }
+});
+
+</script>
+
+</body>
+</html>

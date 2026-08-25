@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<title>Goobrow</title>
+
+<style>
+*{box-sizing:border-box}
+
+html,body{
+ margin:0;
+ width:100%;
+ height:100%;
+ font-family:Arial,sans-serif;
+ background:#fff;
+ color:#202124;
+}
+
+body.dark{
+ background:#202124;
+ color:#fff;
+}
+
+header{
+ height:62px;
+ display:flex;
+ align-items:center;
+ gap:10px;
+ padding:8px 12px;
+ border-bottom:1px solid #ddd;
+ background:inherit;
+ position:sticky;
+ top:0;
+ z-index:10;
+}
+
+.logo{
+ font-size:24px;
+ font-weight:bold;
+ white-space:nowrap;
+}
+
+.g{
+ color:#4285f4;
+}
+
+.o1{
+ color:#ea4335;
+}
+
+.o2{
+ color:#fbbc05;
+}
+
+.b{
+ color:#4285f4;
+}
+
+.r{
+ color:#34a853;
+}
+
+.o3{
+ color:#ea4335;
+}
+
+.w{
+ color:#4285f4;
+}
+
+.address{
+ flex:1;
+ height:44px;
+ border:1px solid #ddd;
+ border-radius:24px;
+ display:flex;
+ align-items:center;
+ background:#f8f9fa;
+}
+
+.dark .address{
+ background:#303134;
+ border-color:#555;
+}
+
+.address input{
+ flex:1;
+ border:0;
+ outline:0;
+ background:transparent;
+ color:inherit;
+ font-size:15px;
+ padding:0 14px;
+ min-width:0;
+}
+
+.address button{
+ border:0;
+ background:transparent;
+ color:inherit;
+ font-size:18px;
+ padding:0 13px;
+}
+
+.iconbtn{
+ width:40px;
+ height:40px;
+ border:0;
+ background:transparent;
+ color:inherit;
+ font-size:21px;
+ border-radius:50%;
+}
+
+.iconbtn:active{
+ background:#ddd;
+}
+
+#home{
+ height:calc(100vh - 62px);
+ overflow:auto;
+ text-align:center;
+ padding:65px 15px;
+}
+
+.biglogo{
+ font-size:58px;
+ font-weight:bold;
+ margin-bottom:30px;
+}
+
+.search{
+ max-width:650px;
+ margin:auto;
+ height:54px;
+ border:1px solid #ddd;
+ border-radius:28px;
+ display:flex;
+ align-items:center;
+ box-shadow:0 1px 7px #0002;
+}
+
+.dark .search{
+ background:#303134;
+ border-color:#555;
+}
+
+.search input{
+ flex:1;
+ border:0;
+ outline:0;
+ background:transparent;
+ color:inherit;
+ font-size:17px;
+ padding:0 18px;
+}
+
+.search button{
+ border:0;
+ background:transparent;
+ color:inherit;
+ font-size:20px;
+ padding:0 18px;
+}
+
+.services{
+ max-width:750px;
+ margin:35px auto;
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+ gap:10px;
+}
+
+.service{
+ padding:15px 8px;
+ border:1px solid #ddd;
+ border-radius:12px;
+ background:#f8f9fa;
+ color:inherit;
+ font-size:14px;
+}
+
+.dark .service{
+ background:#303134;
+ border-color:#555;
+}
+
+#browser{
+ position:fixed;
+ inset:62px 0 0 0;
+ background:#fff;
+ z-index:20;
+ display:none;
+}
+
+.dark #browser{
+ background:#202124;
+}
+
+#browser iframe{
+ width:100%;
+ height:100%;
+ border:0;
+}
+
+#message{
+ padding:30px;
+ text-align:center;
+}
+
+footer{
+ margin-top:50px;
+ opacity:.65;
+}
+
+@media(max-width:600px){
+ .logo{font-size:19px}
+ .biglogo{font-size:45px}
+ header{gap:5px}
+ .address{height:42px}
+}
+</style>
+
+<style id="goobrow-real-browser">
+/* ===== SIMPLE GOOGLE-STYLE GOOBROW BROWSER ===== */
+
+#browserChrome{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:#fff;
+  color:#202124;
+  font-family:Arial,Helvetica,sans-serif;
+}
+
+#browserChrome.dark{
+  background:#202124;
+  color:#e8eaed;
+}
+
+/* SIMPLE TAB ROW */
+
+.gb-tabs{
+  height:40px;
+  display:flex;
+  align-items:center;
+  padding:4px 8px;
+  gap:4px;
+  background:#f8f9fa;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+
+.gb-tabs::-webkit-scrollbar{
+  display:none;
+}
+
+.dark .gb-tabs{
+  background:#292a2d;
+}
+
+.gb-tab{
+  height:32px;
+  min-width:120px;
+  max-width:190px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:0 9px;
+  border-radius:8px;
+  background:transparent;
+  color:#5f6368;
+  cursor:pointer;
+}
+
+.gb-tab:hover{
+  background:#e8eaed;
+}
+
+.gb-tab.active{
+  background:#fff;
+  color:#202124;
+  box-shadow:0 1px 2px rgba(0,0,0,.12);
+}
+
+.dark .gb-tab{
+  color:#bdc1c6;
+}
+
+.dark .gb-tab:hover{
+  background:#3c4043;
+}
+
+.dark .gb-tab.active{
+  background:#202124;
+  color:#e8eaed;
+}
+
+.gb-tab-title{
+  flex:1;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  font-size:12px;
+}
+
+.gb-tab-close{
+  border:0;
+  background:transparent;
+  color:inherit;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.gb-tab-close:hover{
+  background:#dadce0;
+}
+
+.gb-newtab{
+  border:0;
+  background:transparent;
+  color:#5f6368;
+  font-size:22px;
+  width:34px;
+  height:32px;
+  border-radius:50%;
+  cursor:pointer;
+}
+
+.gb-newtab:hover{
+  background:#e8eaed;
+}
+
+.dark .gb-newtab{
+  color:#bdc1c6;
+}
+
+.dark .gb-newtab:hover{
+  background:#3c4043;
+}
+
+/* SIMPLE GOOGLE-STYLE TOOLBAR */
+
+.gb-toolbar{
+  height:54px;
+  display:flex;
+  align-items:center;
+  gap:3px;
+  padding:5px 10px;
+  background:#fff;
+  border-bottom:1px solid #dadce0;
+}
+
+.dark .gb-toolbar{
+  background:#202124;
+  border-color:#3c4043;
+}
+
+.gb-tool{
+  width:34px;
+  height:34px;
+  border:0;
+  border-radius:50%;
+  background:transparent;
+  color:#5f6368;
+  font-size:20px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.gb-tool:hover{
+  background:#f1f3f4;
+}
+
+.dark .gb-tool{
+  color:#bdc1c6;
+}
+
+.dark .gb-tool:hover{
+  background:#3c4043;
+}
+
+/* GOOGLE-LIKE ADDRESS BAR */
+
+.gb-address{
+  flex:1;
+  height:38px;
+  display:flex;
+  align-items:center;
+  background:#f1f3f4;
+  border-radius:20px;
+  padding:0 7px 0 13px;
+  border:1px solid transparent;
+}
+
+.gb-address:hover{
+  background:#e8eaed;
+}
+
+.gb-address:focus-within{
+  background:#fff;
+  border-color:#dadce0;
+  box-shadow:0 1px 4px rgba(60,64,67,.18);
+}
+
+.dark .gb-address{
+  background:#303134;
+}
+
+.dark .gb-address:hover{
+  background:#3c4043;
+}
+
+.dark .gb-address:focus-within{
+  background:#303134;
+  border-color:#5f6368;
+}
+
+.gb-address input{
+  flex:1;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:#202124;
+  font-size:14px;
+  min-width:0;
+  padding:0 8px;
+}
+
+.dark .gb-address input{
+  color:#e8eaed;
+}
+
+.gb-address input::placeholder{
+  color:#5f6368;
+}
+
+.dark .gb-address input::placeholder{
+  color:#9aa0a6;
+}
+
+.gb-address .gb-tool{
+  width:30px;
+  height:30px;
+  font-size:18px;
+}
+
+/* WEBSITE AREA */
+
+.gb-content{
+  position:absolute;
+  top:94px;
+  left:0;
+  right:0;
+  bottom:0;
+  background:#fff;
+}
+
+.dark .gb-content{
+  background:#202124;
+}
+
+.gb-content iframe{
+  width:100%;
+  height:100%;
+  border:0;
+  display:block;
+}
+
+/* MOBILE */
+
+@media(max-width:600px){
+
+  .gb-tabs{
+    height:38px;
+    padding:3px 5px;
+  }
+
+  .gb-tab{
+    min-width:105px;
+    max-width:160px;
+    height:31px;
+  }
+
+  .gb-toolbar{
+    height:53px;
+    padding:5px 4px;
+  }
+
+  .gb-tool{
+    width:31px;
+    height:31px;
+    font-size:18px;
+  }
+
+  .gb-address{
+    height:37px;
+  }
+
+  .gb-address input{
+    font-size:13px;
+  }
+
+  .gb-content{
+    top:91px;
+  }
+}
+</style>>>
+</head>
+
+
+<body>
+
+<header>
+
+<div class="logo">
+<span class="g">G</span><span class="o1">o</span><span class="o2">o</span><span class="b">b</span><span class="r">r</span><span class="o3">o</span><span class="w">w</span>
+</div>
+
+<button class="iconbtn" onclick="goHome()">⌂</button>
+
+<div class="address">
+<input id="url" placeholder="Search Google or enter website">
+<button onclick="navigate()">🔍</button>
+</div>
+
+<button class="iconbtn" onclick="goBack()">‹</button>
+<button class="iconbtn" onclick="goForward()">›</button>
+<button class="iconbtn" onclick="reloadPage()">↻</button>
+<button class="iconbtn" onclick="toggleDark()">🌙</button>
+
+</header>
+
+
+<div id="home" class="google-home">
+
+  <div class="google-topbar">
+    <div class="google-top-left">
+      <a href="https://about.google/" target="_blank">About</a>
+      <a href="https://store.google.com/" target="_blank">Store</a>
+    </div>
+
+    <div class="google-top-right">
+      <a href="https://mail.google.com/" target="_blank">Gmail</a>
+      <a href="https://images.google.com/" target="_blank">Images</a>
+      <button class="google-apps" onclick="googleAppsMenu()" title="Google apps">⋮⋮⋮</button>
+      <button class="google-profile" onclick="gbOpenBrowser('https://accounts.google.com/')">G</button>
+    </div>
+  </div>
+
+  <main class="google-main">
+
+    <div class="google-wordmark" aria-label="Goobrow">
+      <span class="blue">G</span><span class="red">o</span><span class="yellow">o</span><span class="blue">b</span><span class="green">r</span><span class="red">o</span><span class="blue">w</span>
+    </div>
+
+    <form class="google-search-form" onsubmit="return goobrowGoogleSearch(event)">
+      <div class="google-search-box">
+
+        <span class="google-search-icon">⌕</span>
+
+        <input
+          id="searchInput"
+          type="text"
+          autocomplete="off"
+          autofocus
+          placeholder="Search Google or type a URL"
+          aria-label="Search Google"
+          oninput="googleSuggestionUpdate()"
+          onkeydown="if(event.key==='Escape')googleSuggestionHide()"
+        >
+
+        <button type="button" class="google-voice" onclick="googleVoiceSearch()" title="Voice Search">🎙</button>
+
+        <button type="submit" class="google-submit" title="Search">⌕</button>
+
+        <div id="googleSuggestions" class="google-suggestions"></div>
+      </div>
+
+      <div class="google-buttons">
+        <button type="submit">Google Search</button>
+        <button type="button" onclick="googleLucky()">I'm Feeling Lucky</button>
+        <button type="button" class="academic-button" onclick="academicSearch()">Academic</button>
+      </div>
+    </form>
+
+    <div class="google-language">
+      Goobrow offered in:
+      <a href="#" onclick="return false">English</a>
+    </div>
+
+  </main>
+
+  <footer class="google-footer">
+
+    <div class="google-country">
+      Nigeria
+    </div>
+
+    <div class="google-footer-links">
+      <div>
+        <a href="https://ads.google.com/" target="_blank">Advertising</a>
+        <a href="https://smallbusiness.withgoogle.com/" target="_blank">Business</a>
+        <a href="https://www.google.com/search/howsearchworks/" target="_blank">How Search works</a>
+      </div>
+
+      <div>
+        <a href="https://policies.google.com/privacy" target="_blank">Privacy</a>
+        <a href="https://policies.google.com/terms" target="_blank">Terms</a>
+        <a href="#" onclick="googleSettings();return false">Settings</a>
+      </div>
+    </div>
+
+  </footer>
+
+</div>
+
+<style>
+/* ===== GOOGLE-INSPIRED GOOBROW HOMEPAGE ===== */
+
+.google-home{
+  min-height:100vh;
+  background:#fff;
+  color:#202124;
+  font-family:Arial,Helvetica,sans-serif;
+  display:flex;
+  flex-direction:column;
+}
+
+.google-topbar{
+  height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px;
+  font-size:14px;
+}
+
+.google-top-left,
+.google-top-right{
+  display:flex;
+  align-items:center;
+  gap:20px;
+}
+
+.google-topbar a{
+  color:#202124;
+  text-decoration:none;
+}
+
+.google-topbar a:hover{
+  text-decoration:underline;
+}
+
+.google-apps{
+  border:0;
+  background:transparent;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  font-size:20px;
+  cursor:pointer;
+  color:#5f6368;
+}
+
+.google-apps:hover{
+  background:#f1f3f4;
+}
+
+.google-profile{
+  width:34px;
+  height:34px;
+  border:0;
+  border-radius:50%;
+  background:#4285f4;
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.google-main{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding-top:150px;
+}
+
+.google-wordmark{
+  font-size:92px;
+  font-weight:500;
+  letter-spacing:-7px;
+  line-height:1;
+  margin-bottom:36px;
+  user-select:none;
+}
+
+.google-wordmark .blue{color:#4285f4}
+.google-wordmark .red{color:#ea4335}
+.google-wordmark .yellow{color:#fbbc05}
+.google-wordmark .green{color:#34a853}
+
+.google-search-form{
+  width:min(584px,92vw);
+}
+
+.google-search-box{
+  height:48px;
+  border:1px solid #dfe1e5;
+  border-radius:24px;
+  display:flex;
+  align-items:center;
+  padding:0 14px;
+  position:relative;
+  background:#fff;
+}
+
+.google-search-box:hover,
+.google-search-box:focus-within{
+  box-shadow:0 1px 6px rgba(32,33,36,.20);
+  border-color:rgba(223,225,229,0);
+}
+
+.google-search-icon{
+  font-size:25px;
+  color:#5f6368;
+  margin-right:10px;
+}
+
+.google-search-box input{
+  flex:1;
+  height:100%;
+  border:0;
+  outline:0;
+  font-size:16px;
+  color:#202124;
+  background:transparent;
+  min-width:0;
+}
+
+.google-voice,
+.google-submit{
+  border:0;
+  background:transparent;
+  cursor:pointer;
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  font-size:18px;
+}
+
+.google-voice:hover,
+.google-submit:hover{
+  background:#f1f3f4;
+}
+
+.google-suggestions{
+  display:none;
+  position:absolute;
+  left:-1px;
+  right:-1px;
+  top:47px;
+  background:#fff;
+  border:1px solid #dfe1e5;
+  border-top:0;
+  border-radius:0 0 24px 24px;
+  box-shadow:0 4px 8px rgba(32,33,36,.15);
+  z-index:100;
+  overflow:hidden;
+}
+
+.google-suggestion{
+  padding:11px 18px;
+  cursor:pointer;
+  font-size:15px;
+}
+
+.google-suggestion:hover{
+  background:#f8f9fa;
+}
+
+.google-buttons{
+  display:flex;
+  justify-content:center;
+  gap:11px;
+  margin-top:30px;
+  flex-wrap:wrap;
+}
+
+.google-buttons button{
+  border:1px solid #f8f9fa;
+  background:#f8f9fa;
+  color:#202124;
+  padding:10px 16px;
+  border-radius:4px;
+  font-size:14px;
+  cursor:pointer;
+}
+
+.google-buttons button:hover{
+  border-color:#dadce0;
+  box-shadow:0 1px 1px rgba(0,0,0,.1);
+}
+
+.google-buttons .academic-button{
+  background:#f8f9fa;
+}
+
+.google-language{
+  margin-top:28px;
+  font-size:13px;
+}
+
+.google-language a{
+  color:#1a0dab;
+  margin-left:5px;
+}
+
+.google-footer{
+  background:#f2f2f2;
+  color:#70757a;
+  font-size:14px;
+}
+
+.google-country{
+  padding:15px 30px;
+  border-bottom:1px solid #dadce0;
+}
+
+.google-footer-links{
+  min-height:46px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:0 30px;
+}
+
+.google-footer-links div{
+  display:flex;
+  gap:25px;
+}
+
+.google-footer-links a{
+  color:#70757a;
+  text-decoration:none;
+}
+
+.google-footer-links a:hover{
+  text-decoration:underline;
+}
+
+body.dark .google-home{
+  background:#202124;
+  color:#e8eaed;
+}
+
+body.dark .google-topbar a{
+  color:#e8eaed;
+}
+
+body.dark .google-search-box{
+  background:#202124;
+  border-color:#5f6368;
+}
+
+body.dark .google-search-box input{
+  color:#e8eaed;
+}
+
+body.dark .google-search-icon{
+  color:#9aa0a6;
+}
+
+body.dark .google-buttons button{
+  background:#303134;
+  color:#e8eaed;
+  border-color:#303134;
+}
+
+body.dark .google-suggestions{
+  background:#303134;
+  border-color:#5f6368;
+}
+
+body.dark .google-suggestion:hover{
+  background:#3c4043;
+}
+
+body.dark .google-footer{
+  background:#171717;
+  border-color:#3c4043;
+}
+
+body.dark .google-footer-links a,
+body.dark .google-country{
+  color:#bdc1c6;
+}
+
+@media(max-width:600px){
+  .google-main{
+    padding-top:110px;
+  }
+
+  .google-wordmark{
+    font-size:58px;
+    letter-spacing:-5px;
+    margin-bottom:30px;
+  }
+
+  .google-topbar{
+    padding:0 12px;
+  }
+
+  .google-top-left{
+    display:none;
+  }
+
+  .google-top-right{
+    margin-left:auto;
+    gap:12px;
+  }
+
+  .google-top-right a{
+    font-size:13px;
+  }
+
+  .google-footer-links{
+    flex-direction:column;
+    gap:18px;
+    padding:18px;
+  }
+
+  .google-footer-links div{
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:18px;
+  }
+}
+</style>
+
+<script>
+/* ===== GOOGLE SEARCH HOMEPAGE ===== */
+
+function goobrowGoogleSearch(event){
+  if(event) event.preventDefault();
+
+  const input=document.getElementById("searchInput");
+  const q=input.value.trim();
+
+  if(!q) return false;
+
+  googleSuggestionHide();
+
+  const googleUrl="https://www.google.com/search?q="+encodeURIComponent(q);
+
+  if(typeof gbOpenBrowser==="function"){
+    gbOpenBrowser(googleUrl);
+  }else{
+    window.location.href=googleUrl;
+  }
+
+  return false;
+}
+
+function googleLucky(){
+  const input=document.getElementById("searchInput");
+  const q=input.value.trim();
+
+  if(!q) return;
+
+  const url="https://www.google.com/search?btnI=1&q="+encodeURIComponent(q);
+
+  if(typeof gbOpenBrowser==="function"){
+    gbOpenBrowser(url);
+  }else{
+    window.location.href=url;
+  }
+}
+
+function academicSearch(){
+  const input=document.getElementById("searchInput");
+  const q=input.value.trim();
+
+  if(!q){
+    input.focus();
+    return;
+  }
+
+  googleSuggestionHide();
+
+  const url="/results.html?q="+encodeURIComponent(q)+"&mode=academic";
+
+  if(typeof gbOpenBrowser==="function"){
+    gbOpenBrowser(url);
+  }else{
+    window.location.href=url;
+  }
+}
+
+function googleVoiceSearch(){
+  const input=document.getElementById("searchInput");
+
+  const SpeechRecognition=
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+  if(!SpeechRecognition){
+    alert("Voice search is not supported by this browser.");
+    return;
+  }
+
+  const recognition=new SpeechRecognition();
+
+  recognition.lang="en-NG";
+  recognition.interimResults=false;
+  recognition.maxAlternatives=1;
+
+  recognition.onresult=function(event){
+    const text=event.results[0][0].transcript;
+    input.value=text;
+    goobrowGoogleSearch();
+  };
+
+  recognition.onerror=function(){
+    alert("Voice search could not be completed.");
+  };
+
+  recognition.start();
+}
+
+function googleSuggestionUpdate(){
+  const input=document.getElementById("searchInput");
+  const box=document.getElementById("googleSuggestions");
+  const q=input.value.trim();
+
+  if(!q){
+    googleSuggestionHide();
+    return;
+  }
+
+  const suggestions=[
+    q+" news",
+    q+" images",
+    q+" videos",
+    q+" wikipedia"
+  ];
+
+  box.innerHTML="";
+
+  suggestions.forEach(function(item){
+    const div=document.createElement("div");
+    div.className="google-suggestion";
+    div.textContent="⌕  "+item;
+
+    div.onclick=function(){
+      input.value=item;
+      goobrowGoogleSearch();
+    };
+
+    box.appendChild(div);
+  });
+
+  box.style.display="block";
+}
+
+function googleSuggestionHide(){
+  const box=document.getElementById("googleSuggestions");
+  if(box) box.style.display="none";
+}
+
+function googleAppsMenu(){
+  if(typeof gbOpenBrowser==="function"){
+    gbOpenBrowser("https://www.google.com/");
+  }
+}
+
+function googleSettings(){
+  alert(
+    "Goobrow Browser Settings\n\n"+
+    "Use the browser menu for browser settings, "+
+    "dark mode, history and bookmarks."
+  );
+}
+
+document.addEventListener("click",function(event){
+  const box=document.getElementById("googleSuggestions");
+  const search=document.querySelector(".google-search-box");
+
+  if(box && search && !search.contains(event.target)){
+    googleSuggestionHide();
+  }
+});
+</script>
+
+
+<!-- ===== GOOBROW REAL WEBSITE BROWSER ===== -->
+<div id="browserChrome">
+
+  <div class="gb-tabs" id="gbTabs"></div>
+
+  <div class="gb-toolbar">
+    <button class="gb-tool" onclick="gbBack()" title="Back">‹</button>
+    <button class="gb-tool" onclick="gbForward()" title="Forward">›</button>
+    <button class="gb-tool" onclick="gbReload()" title="Reload">↻</button>
+    <button class="gb-tool" onclick="gbHome()" title="Home">⌂</button>
+
+    <div class="gb-address">
+      <span style="margin-right:8px">🔒</span>
+      <input id="gbAddress"
+             placeholder="Search Google or enter address"
+             autocomplete="off"
+             onkeydown="if(event.key==='Enter')gbNavigate()">
+      <button class="gb-tool" onclick="gbBookmark()" title="Bookmark">☆</button>
+    </div>
+
+    <button class="gb-tool" onclick="gbHistory()" title="History">🕘</button>
+    <button class="gb-tool" onclick="gbToggleDark()" title="Theme">⋮</button>
+  </div>
+
+  <div class="gb-content">
+    <iframe id="gbFrame"
+            title="Goobrow Browser"
+            allow="fullscreen"
+            referrerpolicy="strict-origin-when-cross-origin"></iframe>
+  </div>
+</div>
+
+<script>
+/* ===== GOOBROW TAB ENGINE ===== */
+
+const GB_HOME = location.origin + "/?goobrow_home=1";
+
+let gbTabs = [];
+let gbActive = 0;
+
+function gbNewTab(url = GB_HOME, title = "New Tab"){
+  gbTabs.push({
+    url:url,
+    title:title,
+    history:[url],
+    historyIndex:0,
+    bookmark:false
+  });
+
+  gbActive = gbTabs.length - 1;
+  gbRenderTabs();
+  gbLoadActive();
+}
+
+function gbCloseTab(index){
+  if(gbTabs.length === 1){
+    gbTabs[0].url = GB_HOME;
+    gbTabs[0].title = "New Tab";
+    gbTabs[0].history = [GB_HOME];
+    gbTabs[0].historyIndex = 0;
+    gbActive = 0;
+    gbLoadActive();
+    return;
+  }
+
+  gbTabs.splice(index,1);
+
+  if(gbActive >= gbTabs.length)
+    gbActive = gbTabs.length - 1;
+
+  gbRenderTabs();
+  gbLoadActive();
+}
+
+function gbSwitchTab(index){
+  if(index < 0 || index >= gbTabs.length) return;
+  gbActive = index;
+  gbRenderTabs();
+  gbLoadActive();
+}
+
+function gbRenderTabs(){
+  const tabs=document.getElementById("gbTabs");
+
+  tabs.innerHTML="";
+
+  gbTabs.forEach((tab,index)=>{
+    const el=document.createElement("div");
+    el.className="gb-tab"+(index===gbActive?" active":"");
+
+    el.innerHTML=
+      '<span>🌐</span>'+
+      '<span class="gb-tab-title"></span>'+
+      '<button class="gb-tab-close" title="Close">×</button>';
+
+    el.querySelector(".gb-tab-title").textContent=tab.title;
+
+    el.onclick=()=>gbSwitchTab(index);
+
+    el.querySelector(".gb-tab-close").onclick=(e)=>{
+      e.stopPropagation();
+      gbCloseTab(index);
+    };
+
+    tabs.appendChild(el);
+  });
+
+  const plus=document.createElement("button");
+  plus.className="gb-newtab";
+  plus.textContent="+";
+  plus.title="New Tab";
+  plus.onclick=()=>gbNewTab();
+
+  tabs.appendChild(plus);
+}
+
+function gbLoadActive(){
+  const tab=gbTabs[gbActive];
+  if(!tab)return;
+
+  const frame=document.getElementById("gbFrame");
+  const address=document.getElementById("gbAddress");
+
+  address.value=tab.url;
+
+  if(frame.src !== tab.url)
+    frame.src=tab.url;
+}
+
+function gbNormalize(value){
+  value=value.trim();
+
+  if(!value)return GB_HOME;
+
+  if(/^https?:\/\//i.test(value))
+    return value;
+
+  if(value.includes(".") && !value.includes(" "))
+    return "https://"+value;
+
+  return "/results.html?q="+encodeURIComponent(value);
+}
+
+function gbNavigate(){
+  const address=document.getElementById("gbAddress");
+  const value=gbNormalize(address.value);
+
+  const tab=gbTabs[gbActive];
+
+  tab.url=value;
+  tab.title=value===GB_HOME ? "New Tab" : value.replace(/^https?:\/\//i,"");
+
+  tab.history=tab.history.slice(0,tab.historyIndex+1);
+  tab.history.push(value);
+  tab.historyIndex=tab.history.length-1;
+
+  localStorage.setItem("goobrowBrowserLastPage",value);
+
+  gbRenderTabs();
+  gbLoadActive();
+}
+
+function gbBack(){
+  const tab=gbTabs[gbActive];
+
+  if(tab.historyIndex>0){
+    tab.historyIndex--;
+    tab.url=tab.history[tab.historyIndex];
+    gbLoadActive();
+  }
+}
+
+function gbForward(){
+  const tab=gbTabs[gbActive];
+
+  if(tab.historyIndex<tab.history.length-1){
+    tab.historyIndex++;
+    tab.url=tab.history[tab.historyIndex];
+    gbLoadActive();
+  }
+}
+
+function gbReload(){
+  const frame=document.getElementById("gbFrame");
+  try{
+    frame.contentWindow.location.reload();
+  }catch(e){
+    frame.src=frame.src;
+  }
+}
+
+function gbHome(){
+  const tab=gbTabs[gbActive];
+
+  tab.url=GB_HOME;
+  tab.title="New Tab";
+  tab.history.push(GB_HOME);
+  tab.historyIndex=tab.history.length-1;
+
+  gbRenderTabs();
+  gbLoadActive();
+}
+
+function gbBookmark(){
+  const tab=gbTabs[gbActive];
+
+  tab.bookmark=!tab.bookmark;
+
+  const bookmarks=
+    JSON.parse(localStorage.getItem("goobrowBookmarks")||"[]");
+
+  const existing=bookmarks.findIndex(x=>x.url===tab.url);
+
+  if(tab.bookmark && existing===-1)
+    bookmarks.push({url:tab.url,title:tab.title});
+
+  if(!tab.bookmark && existing!==-1)
+    bookmarks.splice(existing,1);
+
+  localStorage.setItem(
+    "goobrowBookmarks",
+    JSON.stringify(bookmarks)
+  );
+}
+
+function gbHistory(){
+  const tab=gbTabs[gbActive];
+
+  const history=
+    JSON.parse(localStorage.getItem("goobrowHistory")||"[]");
+
+  if(tab.url && !history.includes(tab.url))
+    history.unshift(tab.url);
+
+  localStorage.setItem(
+    "goobrowHistory",
+    JSON.stringify(history.slice(0,100))
+  );
+
+  alert(
+    "Goobrow History\\n\\n"+
+    history.slice(0,20).join("\\n")
+  );
+}
+
+function gbToggleDark(){
+  const browser=document.getElementById("browserChrome");
+
+  browser.classList.toggle("dark");
+
+  localStorage.setItem(
+    "goobrowBrowserDark",
+    browser.classList.contains("dark") ? "1" : "0"
+  );
+}
+
+function gbOpenBrowser(url){
+  document.getElementById("browserChrome").style.display="block";
+
+  if(gbTabs.length===0)
+    gbNewTab(url||GB_HOME);
+  else if(url)
+    gbNavigateTo(url);
+}
+
+function gbNavigateTo(url){
+  const tab=gbTabs[gbActive];
+
+  tab.url=url;
+  tab.title=url===GB_HOME ? "New Tab" : url.replace(/^https?:\/\//i,"");
+
+  tab.history.push(url);
+  tab.historyIndex=tab.history.length-1;
+
+  gbRenderTabs();
+  gbLoadActive();
+}
+
+/* Make the browser available from the existing Goobrow page. */
+window.goobrowOpenBrowser=gbOpenBrowser;
+
+
+/* Prevent nested browser chrome when the homepage is loaded inside gbFrame. */
+if(new URLSearchParams(location.search).has("goobrow_home")){
+  const chrome=document.getElementById("browserChrome");
+  if(chrome) chrome.style.display="none";
+}
+
+(function(){
+  const browser=document.getElementById("browserChrome");
+
+  if(localStorage.getItem("goobrowBrowserDark")==="1")
+    browser.classList.add("dark");
+
+  /* First browser tab is ALWAYS Goobrow's own homepage. */
+  gbNewTab(GB_HOME,"New Tab");
+})();
+</script>
+<script>
+
+const home=document.getElementById("home");
+const browser=document.getElementById("browser");
+const frame=document.getElementById("webview");
+const url=document.getElementById("url");
+const searchInput=document.getElementById("searchInput");
+
+function googleSearch(){
+ const q=searchInput.value.trim();
+ if(!q)return;
+ openSite("https://www.google.com/search?q="+encodeURIComponent(q));
+}
+
+function googleImages(){
+ const q=searchInput.value.trim();
+ openSite("https://www.google.com/search?tbm=isch&q="+encodeURIComponent(q));
+}
+
+function googleNews(){
+ const q=searchInput.value.trim();
+ openSite("https://www.google.com/search?tbm=nws&q="+encodeURIComponent(q));
+}
+
+function googleVideos(){
+ const q=searchInput.value.trim();
+ openSite("https://www.google.com/search?tbm=vid&q="+encodeURIComponent(q));
+}
+
+function openSite(site){
+
+ home.style.display="none";
+ browser.style.display="block";
+
+ url.value=site;
+
+ document.getElementById("message").style.display="none";
+ frame.style.display="block";
+
+ frame.src=site;
+
+ localStorage.setItem("goobrowLastPage",site);
+}
+
+function navigate(){
+
+ let value=url.value.trim();
+
+ if(!value)return;
+
+ if(!/^https?:\/\//i.test(value)){
+
+   if(value.includes(".") && !value.includes(" ")){
+      value="https://"+value;
+   }else{
+      value="https://www.google.com/search?q="+encodeURIComponent(value);
+   }
+
+ }
+
+ openSite(value);
+}
+
+function goHome(){
+
+ frame.src="about:blank";
+ browser.style.display="none";
+ home.style.display="block";
+ url.value="";
+}
+
+function goBack(){
+
+ try{
+   frame.contentWindow.history.back();
+ }catch(e){}
+}
+
+function goForward(){
+
+ try{
+   frame.contentWindow.history.forward();
+ }catch(e){}
+}
+
+function reloadPage(){
+
+ try{
+   frame.contentWindow.location.reload();
+ }catch(e){
+   frame.src=frame.src;
+ }
+}
+
+function toggleDark(){
+
+ document.body.classList.toggle("dark");
+
+ localStorage.setItem(
+   "goobrowDark",
+   document.body.classList.contains("dark")?"1":"0"
+ );
+
+}
+
+if(localStorage.getItem("goobrowDark")==="1"){
+ document.body.classList.add("dark");
+}
+
+document.getElementById("searchForm").addEventListener("submit",function(e){
+ e.preventDefault();
+ googleSearch();
+});
+
+url.addEventListener("keydown",function(e){
+ if(e.key==="Enter"){
+   e.preventDefault();
+   navigate();
+ }
+});
+
+searchInput.addEventListener("keydown",function(e){
+ if(e.key==="Enter"){
+   e.preventDefault();
+   googleSearch();
+ }
+});
+
+</script>
+
+</body>
+</html>

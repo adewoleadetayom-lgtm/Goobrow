@@ -1,0 +1,2113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Goobrow Search</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+ margin:0;
+ font-family:Arial,Helvetica,sans-serif;
+ color:#202124;
+ background:#fff
+}
+
+.header{
+ border-bottom:1px solid #eee;
+ padding:14px 22px
+}
+
+.headrow{
+ display:flex;
+ align-items:center;
+ gap:22px
+}
+
+.menu{
+ font-size:25px;
+ text-decoration:none;
+ color:#333
+}
+
+.logo{
+ font-size:30px;
+ font-weight:700;
+ letter-spacing:-2px;
+ text-decoration:none
+}
+
+.logo span:nth-child(1){color:#4285f4}
+.logo span:nth-child(2){color:#ea4335}
+.logo span:nth-child(3){color:#fbbc05}
+.logo span:nth-child(4){color:#4285f4}
+.logo span:nth-child(5){color:#34a853}
+.logo span:nth-child(6){color:#ea4335}
+.logo span:nth-child(7){color:#4285f4}
+
+.search{
+ margin-top:14px;
+ width:min(700px,100%);
+ height:48px;
+ border:1px solid #dfe1e5;
+ border-radius:25px;
+ display:flex;
+ align-items:center;
+ padding:0 15px;
+ background:#fff
+}
+
+.search:focus-within{
+ box-shadow:0 1px 6px #20212430
+}
+
+.search input{
+ flex:1;
+ border:0;
+ outline:0;
+ font-size:16px;
+ min-width:0
+}
+
+.search button{
+ border:0;
+ background:none;
+ font-size:20px;
+ cursor:pointer
+}
+
+.tabs{
+ width:min(1000px,94%);
+ margin:auto;
+ border-bottom:1px solid #eee;
+ display:flex;
+ gap:4px;
+ overflow-x:auto
+}
+
+.tab{
+ padding:15px 18px;
+ text-decoration:none;
+ color:#5f6368;
+ white-space:nowrap;
+ cursor:pointer
+}
+
+.tab.active{
+ color:#1a73e8;
+ border-bottom:3px solid #1a73e8
+}
+
+.content{
+ width:min(900px,94%);
+ margin:25px auto 60px
+}
+
+.result{
+ margin-bottom:28px
+}
+
+.result a.title{
+ font-size:20px;
+ color:#1a0dab;
+ text-decoration:none
+}
+
+.result a.title:hover{
+ text-decoration:underline
+}
+
+.url{
+ font-size:13px;
+ color:#188038;
+ margin:5px 0
+}
+
+.desc{
+ font-size:14px;
+ line-height:1.5;
+ color:#4d5156
+}
+
+/* IMAGES */
+
+.imageGrid{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:14px
+}
+
+.imageCard{
+ border:1px solid #eee;
+ border-radius:12px;
+ overflow:hidden;
+ background:#fff;
+ transition:.15s
+}
+
+.imageCard:hover{
+ box-shadow:0 2px 10px #0002;
+ transform:translateY(-1px)
+}
+
+.imageCard img{
+ width:100%;
+ height:170px;
+ object-fit:cover;
+ display:block;
+ background:#f5f5f5
+}
+
+.imageTitle{
+ padding:9px;
+ font-size:13px;
+ line-height:1.35
+}
+
+/* VIDEOS */
+
+.videoGrid{
+ display:grid;
+ grid-template-columns:repeat(2,1fr);
+ gap:20px
+}
+
+.videoCard{
+ border:1px solid #e5e5e5;
+ border-radius:12px;
+ overflow:hidden;
+ background:#fff;
+ transition:.15s
+}
+
+.videoCard:hover{
+ box-shadow:0 2px 10px #0002
+}
+
+.videoThumb{
+ position:relative;
+ width:100%;
+ aspect-ratio:16/9;
+ background:#eee;
+ overflow:hidden
+}
+
+.videoThumb img{
+ width:100%;
+ height:100%;
+ object-fit:cover;
+ display:block
+}
+
+.play{
+ position:absolute;
+ left:50%;
+ top:50%;
+ transform:translate(-50%,-50%);
+ width:58px;
+ height:58px;
+ border-radius:50%;
+ background:#000b;
+ color:white;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ font-size:25px;
+ padding-left:4px
+}
+
+.videoInfo{
+ padding:13px
+}
+
+.videoTitle{
+ color:#202124;
+ font-size:16px;
+ font-weight:600;
+ line-height:1.35;
+ text-decoration:none;
+ display:block
+}
+
+.videoTitle:hover{
+ color:#1a73e8
+}
+
+.videoUrl{
+ font-size:12px;
+ color:#188038;
+ margin-top:7px;
+ white-space:nowrap;
+ overflow:hidden;
+ text-overflow:ellipsis
+}
+
+/* NEWS */
+
+.newsCard{
+ display:flex;
+ gap:15px;
+ border-bottom:1px solid #eee;
+ padding:15px 0
+}
+
+.newsThumb{
+ width:150px;
+ height:90px;
+ flex:none;
+ object-fit:cover;
+ border-radius:8px;
+ background:#eee
+}
+
+.newsBody{
+ flex:1
+}
+
+.newsTitle{
+ font-size:18px;
+ color:#1a0dab;
+ text-decoration:none;
+ line-height:1.3
+}
+
+.newsTitle:hover{
+ text-decoration:underline
+}
+
+/* AI */
+
+.aiBox{
+ border:1px solid #dadce0;
+ border-radius:16px;
+ padding:20px;
+ margin-bottom:25px;
+ background:#fff;
+ box-shadow:0 1px 4px #0001
+}
+
+.aiTitle{
+ font-size:20px;
+ font-weight:600;
+ margin-bottom:12px
+}
+
+.aiAnswer{
+ font-size:15px;
+ line-height:1.7;
+ white-space:pre-wrap
+}
+
+@media(max-width:700px){
+
+ .header{
+  padding:12px 15px
+ }
+
+ .logo{
+  font-size:25px
+ }
+
+ .content{
+  width:94%;
+  margin-top:18px
+ }
+
+ .imageGrid{
+  grid-template-columns:repeat(2,1fr);
+  gap:10px
+ }
+
+ .imageCard img{
+  height:140px
+ }
+
+ .videoGrid{
+  grid-template-columns:1fr;
+  gap:15px
+ }
+
+ .videoTitle{
+  font-size:15px
+ }
+
+ .newsThumb{
+  width:110px;
+  height:75px
+ }
+
+ .newsTitle{
+  font-size:16px
+ }
+}
+</style>
+
+<style id="goobrow-news-media-style">
+.goobrow-news-card{
+  display:flex;
+  gap:16px;
+  padding:16px 0;
+  border-bottom:1px solid #e5e7eb;
+  max-width:850px;
+}
+
+.goobrow-news-media{
+  width:180px;
+  min-width:180px;
+  height:110px;
+  border-radius:10px;
+  overflow:hidden;
+  background:#f1f3f4;
+}
+
+.goobrow-news-media img,
+.goobrow-news-media video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.goobrow-news-content{
+  flex:1;
+  min-width:0;
+}
+
+.goobrow-news-title{
+  font-size:19px;
+  line-height:1.35;
+  margin-bottom:7px;
+}
+
+.goobrow-news-title a{
+  color:#1a0dab;
+  text-decoration:none;
+}
+
+.goobrow-news-title a:hover{
+  text-decoration:underline;
+}
+
+.goobrow-news-source{
+  font-size:13px;
+  color:#5f6368;
+  margin-bottom:7px;
+}
+
+.goobrow-news-description{
+  font-size:14px;
+  line-height:1.5;
+  color:#4d5156;
+}
+
+.goobrow-news-date{
+  font-size:12px;
+  color:#70757a;
+  margin-top:7px;
+}
+
+@media(max-width:650px){
+  .goobrow-news-card{
+    gap:10px;
+  }
+
+  .goobrow-news-media{
+    width:115px;
+    min-width:115px;
+    height:80px;
+  }
+
+  .goobrow-news-title{
+    font-size:16px;
+  }
+
+  .goobrow-news-description{
+    font-size:13px;
+  }
+}
+</style>
+
+
+<style id="goobrow-academic-super-style">
+.goobrow-academic-card{
+  margin:20px 0;
+  padding:20px;
+  border:1px solid #dbe4ee;
+  border-radius:20px;
+  background:linear-gradient(180deg,#ffffff,#f8fbff);
+  box-shadow:0 8px 25px rgba(0,0,0,.06);
+}
+.goobrow-academic-card h2{
+  margin-top:0;
+}
+.goobrow-academic-diagram{
+  margin:18px 0;
+  padding:15px;
+  overflow:auto;
+  background:#fff;
+  border-radius:16px;
+  border:1px solid #e5e7eb;
+}
+.goobrow-academic-diagram svg{
+  width:100%;
+  min-width:520px;
+  max-height:480px;
+}
+.goobrow-study-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+  margin-top:15px;
+}
+.goobrow-study-box{
+  padding:14px;
+  border-radius:14px;
+  background:#f8fafc;
+  border:1px solid #e5e7eb;
+}
+.goobrow-study-box strong{
+  display:block;
+  margin-bottom:7px;
+}
+.goobrow-quiz{
+  margin-top:18px;
+  padding:16px;
+  border-radius:16px;
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+}
+</style>
+
+
+<style id="goobrow-visual-learning-style">
+
+.goobrow-visual-card{
+  margin:20px 0;
+  padding:22px;
+  border:1px solid #dbe4ee;
+  border-radius:22px;
+  background:linear-gradient(180deg,#ffffff,#f7fbff);
+  box-shadow:0 10px 30px rgba(0,0,0,.07);
+}
+
+.goobrow-visual-card h2{
+  margin:5px 0 12px;
+}
+
+.goobrow-visual-diagram{
+  margin:20px 0;
+  padding:14px;
+  overflow-x:auto;
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:18px;
+}
+
+.goobrow-visual-diagram svg{
+  display:block;
+  width:100%;
+  min-width:540px;
+  max-height:560px;
+  margin:auto;
+}
+
+.goobrow-visual-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:12px;
+  margin-top:16px;
+}
+
+.goobrow-visual-box{
+  padding:15px;
+  border-radius:16px;
+  background:#f8fafc;
+  border:1px solid #e5e7eb;
+}
+
+.goobrow-visual-box strong{
+  display:block;
+  margin-bottom:7px;
+}
+
+.goobrow-visual-example{
+  margin-top:16px;
+  padding:16px;
+  border-radius:16px;
+  background:#eef6ff;
+  border:1px solid #cfe2ff;
+}
+
+.goobrow-visual-quiz{
+  margin-top:18px;
+  padding:17px;
+  border-radius:16px;
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+}
+
+.goobrow-visual-quiz li{
+  margin:8px 0;
+}
+
+</style>
+
+
+
+<style id="goobrow-download-manager-style">
+
+/* GOOBROW DOWNLOAD MANAGER UI */
+
+.goobrow-download-panel{
+  margin:18px 0;
+  padding:18px;
+  border:1px solid #dbe4ee;
+  border-radius:20px;
+  background:linear-gradient(180deg,#ffffff,#f7fbff);
+  box-shadow:0 8px 25px rgba(0,0,0,.06);
+}
+
+.goobrow-download-panel h2{
+  margin:0 0 8px;
+}
+
+.goobrow-download-item{
+  margin-top:12px;
+  padding:14px;
+  border:1px solid #e5e7eb;
+  border-radius:15px;
+  background:#fff;
+}
+
+.goobrow-download-name{
+  font-weight:700;
+  word-break:break-word;
+}
+
+.goobrow-download-status{
+  margin-top:6px;
+  font-size:13px;
+  opacity:.75;
+}
+
+.goobrow-download-progress{
+  width:100%;
+  height:9px;
+  margin-top:10px;
+  border-radius:99px;
+  overflow:hidden;
+  background:#e5e7eb;
+}
+
+.goobrow-download-progress-bar{
+  width:0%;
+  height:100%;
+  transition:width .2s ease;
+}
+
+.goobrow-download-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+
+.goobrow-download-actions button{
+  border:0;
+  border-radius:10px;
+  padding:9px 13px;
+  cursor:pointer;
+}
+
+.goobrow-downloads-button{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  margin-left:8px;
+  padding:8px 13px;
+  border:1px solid #dbe4ee;
+  border-radius:12px;
+  background:#fff;
+  cursor:pointer;
+  font-weight:700;
+}
+
+@media(max-width:600px){
+  .goobrow-download-panel{
+    padding:14px;
+    border-radius:16px;
+  }
+
+  .goobrow-downloads-button{
+    margin-left:0;
+    margin-top:8px;
+  }
+}
+
+</style>
+
+
+<style id="goobrow-native-download-status">
+.goobrow-native-download-badge{
+  display:inline-block;
+  margin-left:6px;
+  padding:3px 7px;
+  border-radius:8px;
+  font-size:11px;
+  font-weight:700;
+  background:#eef6ff;
+}
+</style>
+
+<script id="goobrow-native-download-status-script">
+/* GOOBROW NATIVE DOWNLOAD STATUS */
+
+(function(){
+
+  function detectNativeDownloads(){
+
+    const native=
+      !!(
+        window.Capacitor &&
+        window.Capacitor.Plugins &&
+        window.Capacitor.Plugins.Filesystem
+      );
+
+    window.goobrowNativeDownloadsAvailable=native;
+
+    console.log(
+      "Goobrow native downloads:",
+      native ? "AVAILABLE" : "BROWSER FALLBACK"
+    );
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener(
+      "DOMContentLoaded",
+      detectNativeDownloads
+    );
+  }else{
+    detectNativeDownloads();
+  }
+
+})();
+
+/* END GOOBROW NATIVE DOWNLOAD STATUS */
+</script>
+
+
+<style id="goobrow-google-services-darkmode">
+.goobrow-google-services{
+  margin:18px auto;
+  max-width:1000px;
+  padding:16px;
+  border-radius:18px;
+  background:var(--gb-card,#fff);
+  border:1px solid var(--gb-border,#e5e7eb);
+  box-shadow:0 4px 18px rgba(0,0,0,.06);
+}
+.goobrow-google-services h3{
+  margin:0 0 12px;
+}
+.goobrow-google-service-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:10px;
+}
+.goobrow-google-service{
+  display:block;
+  padding:12px 8px;
+  border-radius:12px;
+  text-align:center;
+  text-decoration:none;
+  color:inherit;
+  background:var(--gb-soft,#f5f7fa);
+  border:1px solid var(--gb-border,#e5e7eb);
+  transition:.2s;
+}
+.goobrow-google-service:hover{
+  transform:translateY(-2px);
+}
+.goobrow-dark-toggle{
+  position:fixed;
+  right:16px;
+  bottom:16px;
+  z-index:99999;
+  border:0;
+  border-radius:999px;
+  padding:11px 15px;
+  cursor:pointer;
+  font-weight:700;
+  background:#202124;
+  color:#fff;
+  box-shadow:0 5px 18px rgba(0,0,0,.25);
+}
+body.goobrow-dark{
+  background:#101114 !important;
+  color:#f1f3f4 !important;
+}
+body.goobrow-dark .goobrow-google-services,
+body.goobrow-dark .card,
+body.goobrow-dark .result,
+body.goobrow-dark .search,
+body.goobrow-dark .goobrow-search-box{
+  background:#1b1c20 !important;
+  color:#f1f3f4 !important;
+  border-color:#34363d !important;
+}
+body.goobrow-dark .goobrow-google-service{
+  background:#24262b !important;
+  color:#f1f3f4 !important;
+  border-color:#3b3e46 !important;
+}
+body.goobrow-dark input,
+body.goobrow-dark textarea,
+body.goobrow-dark select{
+  background:#1b1c20 !important;
+  color:#f1f3f4 !important;
+  border-color:#444750 !important;
+}
+</style>
+
+</head>
+
+<body>
+
+<header class="header">
+
+<div class="headrow">
+<a class="menu" href="index.html">☰</a>
+
+<a class="logo" href="index.html">
+<span>G</span><span>o</span><span>o</span><span>b</span>
+<span>r</span><span>o</span><span>w</span>
+</a>
+</div>
+
+<form class="search" id="searchForm">
+<input id="searchInput"
+ autocomplete="off"
+ placeholder="Search with Goobrow">
+
+<button type="submit">🔎</button>
+</form>
+
+</header>
+
+<nav class="tabs">
+
+<a class="tab" data-mode="all">All</a>
+<a class="tab" data-mode="images">Images</a>
+<a class="tab" data-mode="videos">Videos</a>
+<a class="tab" data-mode="news">News</a>
+<a class="tab" data-mode="ai">AI Mode</a>
+<a class="tab" data-mode="academic">Academics</a>
+
+</nav>
+
+<main class="content">
+<div id="results"></div>
+
+<div id="goobrow-google-cse" style="margin:20px 0;">
+  </div>
+</main>
+
+<script>
+
+const params=new URLSearchParams(location.search);
+
+const query=params.get("q")||"";
+const mode=params.get("mode")||"all";
+
+const input=document.getElementById("searchInput");
+const results=document.getElementById("results");
+
+input.value=query;
+
+document.querySelectorAll(".tab").forEach(tab=>{
+
+ tab.classList.toggle(
+  "active",
+  tab.dataset.mode===mode
+ );
+
+ tab.onclick=()=>{
+
+  if(!query)return;
+
+  location.href=
+   "results.html?q="+
+   encodeURIComponent(query)+
+   "&mode="+
+   tab.dataset.mode;
+
+ };
+
+});
+
+document
+.getElementById("searchForm")
+.addEventListener("submit",e=>{
+
+ e.preventDefault();
+
+ const q=input.value.trim();
+
+ if(q){
+
+  location.href=
+   "results.html?q="+
+   encodeURIComponent(q)+
+   "&mode=all";
+
+ }
+
+});
+
+function esc(x){
+
+ const d=document.createElement("div");
+
+ d.textContent=x??"";
+
+ return d.innerHTML;
+
+}
+
+
+/* ALL */
+
+async function loadAll(){
+
+ try{
+
+  const r=await fetch(
+   "/api/search?q="+
+   encodeURIComponent(query)
+  );
+
+  const d=await r.json();
+
+  if(!d.results?.length){
+
+   results.innerHTML=
+    "<p>No results found.</p>";
+
+   return;
+
+  }
+
+  results.innerHTML=d.results.map(x=>`
+
+   <div class="result">
+
+    <a class="title"
+       href="${esc(x.url)}"
+       target="_blank"
+       rel="noopener">
+
+       ${esc(x.title)}
+
+    </a>
+
+    <div class="url">
+     ${esc(x.url)}
+    </div>
+
+    <div class="desc">
+     ${esc(x.description)}
+    </div>
+
+   </div>
+
+  `).join("");
+
+ }catch{
+
+  results.innerHTML=
+   "<p>Goobrow could not load results.</p>";
+
+ }
+
+}
+
+
+/* IMAGES */
+
+async function loadImages(){
+
+ try{
+
+  const r=await fetch(
+   "/api/images?q="+
+   encodeURIComponent(query)
+  );
+
+  const d=await r.json();
+
+  if(!d.results?.length){
+
+   results.innerHTML=
+    "<p>No images found.</p>";
+
+   return;
+
+  }
+
+  results.innerHTML=
+   '<div class="imageGrid">'+
+
+   d.results.map(x=>`
+
+    <div class="imageCard">
+
+     <a href="${esc(x.image)}"
+        target="_blank"
+        rel="noopener">
+
+      <img
+       src="${esc(x.image)}"
+       loading="lazy"
+       alt="${esc(x.title)}">
+
+     </a>
+
+     <div class="imageTitle">
+      ${esc(x.title)}
+     </div>
+
+    </div>
+
+   `).join("")+
+
+   '</div>';
+
+ }catch{
+
+  results.innerHTML=
+   "<p>Goobrow image search is unavailable.</p>";
+
+ }
+
+}
+
+
+/* VIDEOS */
+
+async function loadVideos(){
+
+ try{
+
+  const r=await fetch(
+   "/api/videos?q="+
+   encodeURIComponent(query)
+  );
+
+  const d=await r.json();
+
+  if(!d.results?.length){
+
+   results.innerHTML=
+    "<p>No video results found.</p>";
+
+   return;
+
+  }
+
+  results.innerHTML=
+   '<div class="videoGrid">'+
+
+   d.results.map(x=>`
+
+    <article class="videoCard">
+
+     <a href="${esc(x.url)}"
+        target="_blank"
+        rel="noopener">
+
+      <div class="videoThumb">
+
+       ${
+        x.image
+        ?
+        `<img
+          src="${esc(x.image)}"
+          loading="lazy"
+          alt="${esc(x.title)}">`
+        :
+        `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#eee;font-size:45px">
+          🎬
+         </div>`
+       }
+
+       <div class="play">▶</div>
+
+      </div>
+
+     </a>
+
+     <div class="videoInfo">
+
+      <a class="videoTitle"
+         href="${esc(x.url)}"
+         target="_blank"
+         rel="noopener">
+
+       ${esc(x.title)}
+
+      </a>
+
+      <div class="videoUrl">
+       ${esc(x.url)}
+      </div>
+
+     </div>
+
+    </article>
+
+   `).join("")+
+
+   '</div>';
+
+ }catch{
+
+  results.innerHTML=
+   "<p>Video search is unavailable.</p>";
+
+ }
+
+}
+
+
+/* NEWS */
+
+async function loadNews(){
+
+ try{
+
+  const r=await fetch(
+   "/api/news?q="+
+   encodeURIComponent(query)
+  );
+
+  const d=await r.json();
+
+  if(!d.results?.length){
+
+   results.innerHTML=
+    "<p>No news results found.</p>";
+
+   return;
+
+  }
+
+  results.innerHTML=
+   d.results.map(x=>`
+
+    <article class="newsCard">
+
+     ${
+      x.image
+      ?
+      `<img
+        class="newsThumb"
+        src="${esc(x.image)}"
+        loading="lazy"
+        alt="">`
+      :
+      ""
+     }
+
+     <div class="newsBody">
+
+      <a class="newsTitle"
+         href="${esc(x.url)}"
+         target="_blank"
+         rel="noopener">
+
+       ${esc(x.title)}
+
+      </a>
+
+      <div class="url">
+       ${esc(x.url)}
+      </div>
+
+     </div>
+
+    </article>
+
+   `).join("");
+
+ }catch{
+
+  results.innerHTML=
+   "<p>News search is unavailable.</p>";
+
+ }
+
+}
+
+
+/* AI */
+
+async function loadAI(){
+
+ results.innerHTML=`
+
+  <div class="aiBox">
+
+   <div class="aiTitle">
+    ✨ Goobrow AI
+   </div>
+
+   <div class="aiAnswer"
+        id="aiAnswer">
+    Thinking...
+   </div>
+
+  </div>
+
+ `;
+
+ try{
+
+  const response=await fetch(
+   "/api/ai",
+   {
+    method:"POST",
+    headers:{
+     "Content-Type":
+      "application/json"
+    },
+    body:JSON.stringify({
+     query
+    })
+   }
+  );
+
+  const data=await response.json();
+
+  const answer=
+   document.getElementById(
+    "aiAnswer"
+   );
+
+  if(!response.ok){
+
+   answer.textContent=
+    data.error||
+    "Goobrow AI is unavailable.";
+
+   return;
+
+  }
+
+  answer.textContent=
+   data.answer||
+   "Goobrow AI returned no answer.";
+
+ }catch{
+
+  document.getElementById(
+   "aiAnswer"
+  ).textContent=
+   "Goobrow AI could not connect to the AI service.";
+
+ }
+
+}
+
+
+/* START */
+
+if(!query){
+
+ results.innerHTML=
+  "<p>Please enter a search query.</p>";
+
+}else if(mode==="images"){
+
+ loadImages();
+
+}else if(mode==="videos"){
+
+ loadVideos();
+
+}else if(mode==="news"){
+
+ loadNews();
+
+}
+else if(mode==="academic"){
+  goobrowAcademicSuperSearch(query);
+  return;
+}
+/* ORIGINAL ACADEMIC MODE DISABLED */
+if(false){
+  results.innerHTML='<p>🎓 Loading academic results...</p>';
+
+  fetch('/api/academic?q='+encodeURIComponent(q))
+    .then(r=>r.json())
+    .then(d=>{
+      let html='';
+
+      html += '<div style="padding:12px 0;">';
+      html += '<h2 style="margin:0 0 10px;">🎓 '+(d.subject||'Academics')+'</h2>';
+
+      if(d.answer){
+        html += '<div style="padding:14px;border-radius:12px;background:#f5f7fb;margin-bottom:16px;font-weight:500;">'+d.answer+'</div>';
+      }
+
+      if(d.results && d.results.length){
+        d.results.forEach(function(x){
+          html += '<article class="result">';
+          html += '<a href="'+x.url+'" target="_blank" rel="noopener">';
+          html += '<h3>'+x.title+'</h3>';
+          html += '</a>';
+          html += '<p>'+(x.description||'')+'</p>';
+          html += '</article>';
+        });
+      }
+
+      html += '</div>';
+      results.innerHTML=html;
+    })
+    .catch(function(){
+      results.innerHTML='<p>Academic search is temporarily unavailable.</p>';
+    });
+
+}else if(mode==="ai"){
+
+ loadAI();
+
+}else{
+
+ loadAll();
+
+}
+
+</script>
+
+
+<style>
+.goobrow-footer{text-align:center;border-top:1px solid #eee;padding:25px;margin-top:50px;font-size:14px}
+.goobrow-footer a{color:#5f6368;text-decoration:none;margin:0 5px}
+.goobrow-footer a:hover{text-decoration:underline}
+</style>
+
+<footer class="goobrow-footer">
+<a href="about.html">About</a> ·
+<a href="privacy.html">Privacy Policy</a> ·
+<a href="terms.html">Terms</a> ·
+<a href="cookies.html">Cookie Policy</a> ·
+<a href="contact.html">Contact</a>
+</footer>
+
+<script id="goobrow-news-media-renderer">
+(function(){
+
+  function escapeHTML(value){
+    return String(value || "")
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;")
+      .replace(/'/g,"&#039;");
+  }
+
+  function newsMedia(item){
+
+    const image =
+      item.image ||
+      item.thumbnail ||
+      item.imageUrl ||
+      "";
+
+    const video =
+      item.video ||
+      item.videoUrl ||
+      item.video_url ||
+      "";
+
+    if(video){
+      return `
+        <video
+          src="${escapeHTML(video)}"
+          controls
+          muted
+          playsinline
+          preload="metadata">
+        </video>
+      `;
+    }
+
+    if(image){
+      return `
+        <img
+          src="${escapeHTML(image)}"
+          loading="lazy"
+          onerror="this.parentElement.innerHTML='<span style=&quot;display:flex;height:100%;align-items:center;justify-content:center;font-size:32px&quot;>📰</span>'"
+          alt="">
+      `;
+    }
+
+    return `
+      <span style="
+        display:flex;
+        height:100%;
+        align-items:center;
+        justify-content:center;
+        font-size:36px;">
+        📰
+      </span>
+    `;
+  }
+
+  window.goobrowRenderNews = function(results, container){
+
+    if(!container) return;
+
+    if(!Array.isArray(results) || !results.length){
+      container.innerHTML =
+        '<p>No news results found.</p>';
+      return;
+    }
+
+    container.innerHTML = results.map(item => {
+
+      const title =
+        item.title ||
+        "Untitled news";
+
+      const url =
+        item.url ||
+        item.link ||
+        "#";
+
+      const description =
+        item.description ||
+        item.snippet ||
+        "";
+
+      const source =
+        item.source ||
+        item.publisher ||
+        "News";
+
+      const date =
+        item.publishedAt ||
+        item.date ||
+        "";
+
+      return `
+        <article class="goobrow-news-card">
+
+          <div class="goobrow-news-media">
+            ${newsMedia(item)}
+          </div>
+
+          <div class="goobrow-news-content">
+
+            <div class="goobrow-news-title">
+              <a
+                href="${escapeHTML(url)}"
+                target="_blank"
+                rel="noopener noreferrer">
+                ${escapeHTML(title)}
+              </a>
+            </div>
+
+            <div class="goobrow-news-source">
+              ${escapeHTML(source)}
+            </div>
+
+            <div class="goobrow-news-description">
+              ${escapeHTML(
+                String(description)
+                  .replace(/<[^>]*>/g," ")
+              )}
+            </div>
+
+            ${
+              date
+              ? `<div class="goobrow-news-date">
+                   ${escapeHTML(date)}
+                 </div>`
+              : ""
+            }
+
+          </div>
+
+        </article>
+      `;
+
+    }).join("");
+  };
+
+})();
+</script>
+
+
+<script id="goobrow-academic-super-mode">
+/* GOOBROW ACADEMIC SUPER MODE */
+
+async function goobrowAcademicSuperSearch(query){
+
+  const container=document.getElementById("results");
+  if(!container) return;
+
+  container.innerHTML=
+    '<div class="goobrow-academic-card">'+
+    '<h2>🎓 Goobrow Study Mode</h2>'+
+    '<p>Building your visual study answer...</p>'+
+    '</div>';
+
+  try{
+
+    const response=await fetch(
+      "/api/academic-super?q="+encodeURIComponent(query)
+    );
+
+    const d=await response.json();
+
+    if(!d.found){
+
+      container.innerHTML=
+        '<div class="goobrow-academic-card">'+
+        '<h2>🎓 Academic Search</h2>'+
+        '<p>'+esc(d.message||"No visual lesson found.")+'</p>'+
+        '<p>Try topics such as <b>cell structure</b>, <b>photosynthesis</b>, <b>human heart</b>, <b>water cycle</b>, <b>atom</b>, <b>electric circuit</b>, <b>solar system</b> or <b>food chain</b>.</p>'+
+        '</div>';
+
+      return;
+    }
+
+    const v=d.visual||{};
+
+    let html=
+      '<article class="goobrow-academic-card">'+
+      '<div style="font-size:13px;font-weight:700;opacity:.7;">'+
+      esc(v.subject||"ACADEMICS")+
+      '</div>'+
+      '<h2>📚 '+esc(v.title||"Study Topic")+'</h2>'+
+      '<p style="line-height:1.7;">'+
+      esc(v.explanation||"")+
+      '</p>';
+
+    if(v.diagram){
+
+      html+=
+        '<div class="goobrow-academic-diagram">'+
+        v.diagram+
+        '</div>';
+    }
+
+    if(v.formula){
+
+      html+=
+        '<div class="goobrow-study-box">'+
+        '<strong>🧮 Formula / Equation</strong>'+
+        '<div style="font-size:18px;font-weight:700;">'+
+        esc(v.formula)+
+        '</div></div>';
+    }
+
+    if(Array.isArray(v.keyPoints)){
+
+      html+=
+        '<div class="goobrow-study-grid">';
+
+      v.keyPoints.forEach(function(point,i){
+
+        html+=
+          '<div class="goobrow-study-box">'+
+          '<strong>Key Point '+(i+1)+'</strong>'+
+          '<div>'+esc(point)+'</div>'+
+          '</div>';
+
+      });
+
+      html+='</div>';
+    }
+
+    html+=
+      '<div class="goobrow-quiz">'+
+      '<strong>📝 Quick Study Challenge</strong>'+
+      '<p>After studying the diagram, try explaining the topic in your own words.</p>'+
+      '<button onclick="alert(\\'Great job! Keep learning with Goobrow.\\')" style="padding:10px 15px;border:0;border-radius:10px;cursor:pointer;">I Understand ✓</button>'+
+      '</div>';
+
+    html+='</article>';
+
+    container.innerHTML=html;
+
+  }catch(error){
+
+    console.error(error);
+
+    container.innerHTML=
+      '<div class="goobrow-academic-card">'+
+      '<h2>🎓 Academic Search</h2>'+
+      '<p>Goobrow could not load the visual lesson right now.</p>'+
+      '</div>';
+  }
+}
+
+/* END GOOBROW ACADEMIC SUPER MODE */
+</script>
+
+
+<script id="goobrow-visual-learning-ui">
+
+/* GOOBROW VISUAL LEARNING UI */
+
+async function goobrowVisualLearningSearch(query){
+
+  const container=document.getElementById("results");
+
+  if(!container) return;
+
+  container.innerHTML=
+    '<article class="goobrow-visual-card">'+
+    '<h2>🔬 Goobrow Visual Learning</h2>'+
+    '<p>Preparing your detailed study diagram...</p>'+
+    '</article>';
+
+  try{
+
+    const response=await fetch(
+      "/api/visual-learning?q="+encodeURIComponent(query)
+    );
+
+    const d=await response.json();
+
+    if(!d.found){
+
+      container.innerHTML=
+        '<article class="goobrow-visual-card">'+
+        '<h2>📚 Visual Learning</h2>'+
+        '<p>'+esc(d.message||"No visual lesson found.")+'</p>'+
+        '<p><b>Try:</b> digestive system, respiratory system, flower, DNA, chemical bonding, reflection of light, forces, magnetism, volcano or rock cycle.</p>'+
+        '</article>';
+
+      return;
+    }
+
+    const v=d.visual||{};
+
+    let html=
+      '<article class="goobrow-visual-card">'+
+      '<div style="font-size:13px;font-weight:700;opacity:.7;">'+
+      esc(v.subject||"ACADEMIC")+
+      '</div>'+
+      '<h2>📖 '+esc(v.title||"Study Topic")+'</h2>'+
+      '<p style="line-height:1.75;">'+
+      esc(v.explanation||"")+
+      '</p>';
+
+    if(v.diagram){
+
+      html+=
+        '<div class="goobrow-visual-diagram">'+
+        v.diagram+
+        '</div>';
+    }
+
+    if(v.formula){
+
+      html+=
+        '<div class="goobrow-visual-box">'+
+        '<strong>📐 Formula / Rule</strong>'+
+        '<div style="font-size:18px;font-weight:700;">'+
+        esc(v.formula)+
+        '</div>'+
+        '</div>';
+    }
+
+    if(Array.isArray(v.keyPoints)){
+
+      html+=
+        '<div class="goobrow-visual-grid">';
+
+      v.keyPoints.forEach(function(point,i){
+
+        html+=
+          '<div class="goobrow-visual-box">'+
+          '<strong>Key Point '+(i+1)+'</strong>'+
+          '<div>'+esc(point)+'</div>'+
+          '</div>';
+
+      });
+
+      html+='</div>';
+    }
+
+    if(v.example){
+
+      html+=
+        '<div class="goobrow-visual-example">'+
+        '<strong>💡 Example</strong>'+
+        '<p>'+esc(v.example)+'</p>'+
+        '</div>';
+    }
+
+    if(Array.isArray(v.quiz)){
+
+      html+=
+        '<div class="goobrow-visual-quiz">'+
+        '<strong>📝 Quick Quiz</strong>'+
+        '<ol>';
+
+      v.quiz.forEach(function(question){
+
+        html+=
+          '<li>'+esc(question)+'</li>';
+
+      });
+
+      html+=
+        '</ol>'+
+        '<button onclick="alert(\\'Excellent! Try answering the questions without looking at the explanation.\\')" style="padding:11px 16px;border:0;border-radius:10px;cursor:pointer;">✓ I am ready</button>'+
+        '</div>';
+    }
+
+    html+='</article>';
+
+    container.innerHTML=html;
+
+  }catch(error){
+
+    console.error(error);
+
+    container.innerHTML=
+      '<article class="goobrow-visual-card">'+
+      '<h2>⚠️ Visual Learning</h2>'+
+      '<p>Goobrow could not load this lesson right now.</p>'+
+      '</article>';
+  }
+}
+
+/* END GOOBROW VISUAL LEARNING UI */
+
+</script>
+
+
+
+<script id="goobrow-download-manager-ui">
+
+/* GOOBROW DOWNLOAD MANAGER UI */
+
+const goobrowDownloads=[];
+
+function goobrowDownloadManager(){
+
+  const existing=document.getElementById("goobrow-download-panel");
+
+  if(existing){
+    existing.scrollIntoView({behavior:"smooth"});
+    return;
+  }
+
+  const results=document.getElementById("results");
+
+  if(!results) return;
+
+  const panel=document.createElement("section");
+
+  panel.id="goobrow-download-panel";
+
+  panel.className="goobrow-download-panel";
+
+  panel.innerHTML=
+    '<h2>📥 Goobrow Downloads</h2>'+
+    '<p>Downloads started from Goobrow will appear here.</p>'+
+    '<div id="goobrow-download-list">'+
+    '<p>No downloads yet.</p>'+
+    '</div>';
+
+  results.prepend(panel);
+
+  goobrowRenderDownloads();
+}
+
+
+function goobrowRenderDownloads(){
+
+  const list=document.getElementById("goobrow-download-list");
+
+  if(!list) return;
+
+  if(!goobrowDownloads.length){
+
+    list.innerHTML='<p>No downloads yet.</p>';
+
+    return;
+  }
+
+  list.innerHTML=goobrowDownloads.map(function(item){
+
+    return (
+      '<div class="goobrow-download-item">'+
+        '<div class="goobrow-download-name">'+
+        goobrowDownloadEsc(item.name)+
+        '</div>'+
+
+        '<div class="goobrow-download-status">'+
+        goobrowDownloadEsc(item.status)+
+        '</div>'+
+
+        '<div class="goobrow-download-progress">'+
+          '<div class="goobrow-download-progress-bar" style="width:'+
+          Number(item.progress||0)+'%;"></div>'+
+        '</div>'+
+
+        '<div class="goobrow-download-actions">'+
+          (item.status==="Completed" ?
+            '<button onclick="goobrowOpenDownloadedFile(\''+
+            goobrowDownloadEscAttr(item.url)+
+            '\')">📂 Open</button>' : '')+
+
+          '<button onclick="goobrowRemoveDownload(\''+
+          goobrowDownloadEscAttr(item.id)+
+          '\')">✕ Remove</button>'+
+        '</div>'+
+      '</div>'
+    );
+
+  }).join("");
+
+}
+
+
+function goobrowDownloadEsc(value){
+
+  return String(value||"")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#39;");
+}
+
+
+function goobrowDownloadEscAttr(value){
+
+  return String(value||"")
+    .replace(/\\/g,"\\\\")
+    .replace(/'/g,"\\'");
+}
+
+
+async function goobrowStartDownload(url,name){
+
+  url=String(url||"").trim();
+
+  if(!url){
+    alert("No downloadable media URL was provided.");
+    return;
+  }
+
+  let check;
+
+  try{
+    const response=await fetch(
+      "/api/download-check?url="+encodeURIComponent(url)
+    );
+    check=await response.json();
+  }catch(error){
+    alert("Goobrow could not check this download.");
+    return;
+  }
+
+  if(!check.downloadable){
+
+    if(check.platform==="youtube"){
+      alert(
+        "This is a YouTube video. Goobrow does not bypass YouTube download restrictions. Please use YouTube's supported download options."
+      );
+    }else{
+      alert(check.message||"This file cannot be downloaded by Goobrow.");
+    }
+
+    return;
+  }
+
+  const id=
+    "download-"+Date.now()+"-"+Math.random().toString(36).slice(2);
+
+  const item={
+    id:id,
+    name:name||"Goobrow download",
+    url:url,
+    status:"Starting...",
+    progress:0,
+    native:false,
+    filePath:""
+  };
+
+  goobrowDownloads.unshift(item);
+  goobrowDownloadManager();
+  goobrowRenderDownloads();
+
+  try{
+
+    /*
+     * Native Capacitor Android path.
+     * The Capacitor bridge is available inside the Android app.
+     */
+    const CapacitorBridge=
+      window.Capacitor &&
+      window.Capacitor.Plugins &&
+      window.Capacitor.Plugins.Filesystem;
+
+    if(CapacitorBridge){
+
+      item.native=true;
+      item.status="Connecting...";
+      goobrowRenderDownloads();
+
+      const response=await fetch(url);
+
+      if(!response.ok){
+        throw new Error("HTTP "+response.status);
+      }
+
+      const total=Number(
+        response.headers.get("content-length")||0
+      );
+
+      if(!response.body){
+        throw new Error("Streaming unavailable.");
+      }
+
+      const reader=response.body.getReader();
+      const chunks=[];
+      let received=0;
+
+      item.status="Downloading...";
+      goobrowRenderDownloads();
+
+      while(true){
+
+        const part=await reader.read();
+
+        if(part.done) break;
+
+        chunks.push(part.value);
+        received+=part.value.length;
+
+        if(total){
+          item.progress=Math.min(
+            99,
+            Math.round((received/total)*100)
+          );
+
+          item.status=
+            "Downloading "+item.progress+"%";
+        }else{
+          item.status=
+            "Downloading "+Math.round(received/1024)+" KB";
+        }
+
+        goobrowRenderDownloads();
+      }
+
+      const merged=new Uint8Array(received);
+      let offset=0;
+
+      for(const chunk of chunks){
+        merged.set(chunk,offset);
+        offset+=chunk.length;
+      }
+
+      let binary="";
+      const sliceSize=0x8000;
+
+      for(let i=0;i<merged.length;i+=sliceSize){
+        binary+=String.fromCharCode(
+          ...merged.subarray(
+            i,
+            Math.min(i+sliceSize,merged.length)
+          )
+        );
+      }
+
+      const base64=btoa(binary);
+
+      const filename=
+        goobrowSafeFilename(
+          name||"goobrow-download"
+        );
+
+      const result=
+        await CapacitorBridge.writeFile({
+          path:"Goobrow Downloads/"+filename,
+          data:base64,
+          directory:"DOCUMENTS",
+          recursive:true
+        });
+
+      item.filePath=
+        result.uri||
+        "Goobrow Downloads/"+filename;
+
+      item.progress=100;
+      item.status="Completed — saved on device";
+
+      goobrowRenderDownloads();
+
+      alert(
+        "Download complete!\n\nSaved by Goobrow as:\n"+
+        filename
+      );
+
+      return;
+    }
+
+    /*
+     * Browser fallback.
+     */
+    const response=await fetch(url);
+
+    if(!response.ok){
+      throw new Error("HTTP "+response.status);
+    }
+
+    const total=Number(
+      response.headers.get("content-length")||0
+    );
+
+    if(!response.body){
+      throw new Error("Streaming is unavailable.");
+    }
+
+    const reader=response.body.getReader();
+    const chunks=[];
+    let received=0;
+
+    item.status="Downloading...";
+    goobrowRenderDownloads();
+
+    while(true){
+
+      const part=await reader.read();
+
+      if(part.done) break;
+
+      chunks.push(part.value);
+      received+=part.value.length;
+
+      if(total){
+        item.progress=Math.min(
+          100,
+          Math.round((received/total)*100)
+        );
+
+        item.status=
+          "Downloading "+item.progress+"%";
+      }else{
+        item.status=
+          "Downloading "+Math.round(received/1024)+" KB";
+      }
+
+      goobrowRenderDownloads();
+    }
+
+    const blob=new Blob(chunks);
+    const objectURL=URL.createObjectURL(blob);
+    const link=document.createElement("a");
+
+    link.href=objectURL;
+    link.download=
+      goobrowSafeFilename(
+        name||"goobrow-download"
+      );
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(function(){
+      URL.revokeObjectURL(objectURL);
+    },30000);
+
+    item.progress=100;
+    item.status="Completed";
+
+    item.url=objectURL;
+
+    goobrowRenderDownloads();
+
+  }catch(error){
+
+    console.error(
+      "Goobrow native download error:",
+      error
+    );
+
+    item.status=
+      "Download failed: "+
+      (error.message||"source blocked direct download");
+
+    item.progress=0;
+
+    goobrowRenderDownloads();
+  }
+}
+
+function goobrowSafeFilename(name){
+
+  return String(name||"download")
+    .replace(/[\\\\/:*?"<>|]/g,"_")
+    .slice(0,120);
+}
+
+
+function goobrowRemoveDownload(id){
+
+  const index=
+    goobrowDownloads.findIndex(
+      function(item){
+        return item.id===id;
+      }
+    );
+
+  if(index!==-1){
+
+    const item=goobrowDownloads[index];
+
+    if(item.url && item.url.startsWith("blob:")){
+
+      try{
+        URL.revokeObjectURL(item.url);
+      }catch(e){}
+
+    }
+
+    goobrowDownloads.splice(index,1);
+
+  }
+
+  goobrowRenderDownloads();
+
+}
+
+
+function goobrowOpenDownloadedFile(url){
+
+  if(!url) return;
+
+  window.open(url,"_blank");
+
+}
+
+
+/* END GOOBROW DOWNLOAD MANAGER UI */
+
+</script>
+
+</body>
+</html>
