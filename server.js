@@ -360,6 +360,16 @@ function goobrowVisualLearningTopic(query){
 const PORT = Number(process.env.PORT) || 3001;
 
 const app = express();
+
+app.use(cors({
+  origin: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: false
+}));
+
+app.options("*", cors());
+
 app.use(express.static(path.join(__dirname, "www")));
 
 
